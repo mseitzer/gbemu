@@ -34,11 +34,8 @@ pub struct Cpu<B: Bus> {
     pc: u16,
     sp: u16,
 
-    zero_flag: bool,
-    sub_flag: bool,
-    hcarry_flag: bool,
-    carry_flag: bool,
-
+    flags: CpuFlags,
+    
     int_flag: bool,
     int_toggle_pending: bool,
 
@@ -57,16 +54,36 @@ pub struct Cpu<B: Bus> {
     bus: B,
 }
 
+bitflags! {
+    flags CpuFlags: u8 {
+        const ZERO     = 1 << 7,
+        const SUB      = 1 << 6,
+        const HCARRY   = 1 << 5,
+        const CARRY    = 1 << 4,
+    }
+}
+
+impl CpuFlags {
+    fn test(&self, test: bool) -> CpuFlags {
+        if test { *self } else { CpuFlags::empty() }
+    }
+
+    fn force(&mut self, flag: CpuFlags, insert: bool) {
+        if insert {
+            self.insert(flag)
+        } else {
+            self.remove(flag)
+        }
+    }
+}
+
 impl<B> Cpu<B> where B: Bus {
     pub fn new(bus: B) -> Cpu<B> {
         Cpu {
             pc: 0,
             sp: 0,
 
-            zero_flag: false,
-            sub_flag: false,
-            hcarry_flag: false,
-            carry_flag: false,
+            flags: CpuFlags::empty(),
 
             int_flag: false,
             int_toggle_pending: false,
@@ -291,7 +308,7 @@ impl<B> Cpu<B> where B: Bus {
                 let a = self.sp;
                 let b = instr.imm.imm8() as u16;
                 self.sp = self.alu_add_words(a, b, false);
-                self.zero_flag = false;
+                self.flags.remove(ZERO);
             },
             Op::add16_reg { src } => {
                 let value = self.read_reg16(Reg16::HL).wrapping_add(
@@ -425,18 +442,18 @@ impl<B> Cpu<B> where B: Bus {
             },
 
             Op::inc8_reg { src } => {
-                let carry = self.carry_flag;
+                let carry = self.flags.contains(CARRY);
                 let a = self.read_reg8(src);
                 let value = self.alu_add_bytes(a, 1, false);
-                self.carry_flag = carry;
+                self.flags.force(CARRY, carry);
                 self.write_reg8(src, value);
             },
             Op::inc8_ind => {
-                let carry = self.carry_flag;
+                let carry = self.flags.contains(CARRY);
                 let addr = self.read_reg16(Reg16::HL);
                 let a = self.bus.read(addr);
                 let value = self.alu_add_bytes(a, 1, false);
-                self.carry_flag = carry;
+                self.flags.force(CARRY, carry);
                 self.bus.write(addr, value);
             },
             Op::inc16_reg { src } => {
@@ -448,18 +465,18 @@ impl<B> Cpu<B> where B: Bus {
             },
 
             Op::dec8_reg { src } => {
-                let carry = self.carry_flag;
+                let carry = self.flags.contains(CARRY);
                 let a = self.read_reg8(src);
                 let value = self.alu_sub_bytes(a, 1, false);
-                self.carry_flag = carry;
+                self.flags.force(CARRY, carry);
                 self.write_reg8(src, value);
             },
             Op::dec8_ind => {
-                let carry = self.carry_flag;
+                let carry = self.flags.contains(CARRY);
                 let addr = self.read_reg16(Reg16::HL);
                 let a = self.bus.read(addr);
                 let value = self.alu_sub_bytes(a, 1, false);
-                self.carry_flag = carry;
+                self.flags.force(CARRY, carry);
                 self.bus.write(addr, value);
             },
             Op::dec16_reg { src } => {
@@ -489,195 +506,136 @@ impl<B> Cpu<B> where B: Bus {
 
             Op::swap { src } => {
                 let value = self.read_reg8(src);
-                self.reset_flags();
-                self.zero_flag = value == 0;
-                self.write_reg8(src, (value & 0xf) << 4 | (value >> 4));              
+                self.flags = ZERO.test(value == 0);
+                self.write_reg8(src, (value & 0xf) << 4 | (value >> 4));
             },
             Op::swap_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let value = self.bus.read(addr);
-                self.reset_flags();
-                self.zero_flag = value == 0;
+                self.flags = ZERO.test(value == 0);
                 self.bus.write(addr, (value & 0xf) << 4 | (value >> 4));
             },
 
             /* Rotate & shift instructions */
-            // TODO: Check if rotate and shift instructions set the zero flag
             Op::rla => {
                 let mut value = self.read_reg8(Reg8::A);
-                let old_carry = self.carry_flag;
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1 | (old_carry as u8);
-                self.zero_flag = value == 0;
+                value = self.rotate_left(value);
+                self.flags.remove(ZERO);
                 self.write_reg8(Reg8::A, value);
             },
             Op::rl { src } => {
                 let mut value = self.read_reg8(src);
-                let old_carry = self.carry_flag;
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1 | (old_carry as u8);
-                self.zero_flag = value == 0;
+                value = self.rotate_left(value);
                 self.write_reg8(src, value);
             },
             Op::rl_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let mut value = self.bus.read(addr);
-                self.reset_flags();
-                let old_carry = self.carry_flag;
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1 | (old_carry as u8);
-                self.zero_flag = value == 0;
+                value = self.rotate_left(value);
                 self.bus.write(addr, value);
             },
 
             Op::rlca => {
                 let mut value = self.read_reg8(Reg8::A);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1 | (self.carry_flag as u8);
-                self.zero_flag = value == 0;
+                value = self.rotate_left_carry(value);
+                self.flags.remove(ZERO);
                 self.write_reg8(Reg8::A, value);
             },
             Op::rlc { src } => {
                 let mut value = self.read_reg8(src);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1 | (self.carry_flag as u8);
-                self.zero_flag = value == 0;
+                value = self.rotate_left_carry(value);
                 self.write_reg8(src, value);
             },
             Op::rlc_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let mut value = self.bus.read(addr);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1 | (self.carry_flag as u8);
-                self.zero_flag = value == 0;
+                value = self.rotate_left_carry(value);
                 self.bus.write(addr, value);
             }
 
             Op::rra => {
                 let mut value = self.read_reg8(Reg8::A);
-                let old_carry = self.carry_flag;
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = (old_carry as u8) << 7 | value >> 1;
-                self.zero_flag = value == 0;
+                value = self.rotate_right(value);
+                self.flags.remove(ZERO);
                 self.write_reg8(Reg8::A, value);
             },
             Op::rr { src } => {
                 let mut value = self.read_reg8(src);
-                let old_carry = self.carry_flag;
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = (old_carry as u8) << 7 | value >> 1;
-                self.zero_flag = value == 0;
+                value = self.rotate_right(value);
                 self.write_reg8(src, value);
             },
             Op::rr_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let mut value = self.bus.read(addr);
-                let old_carry = self.carry_flag;
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = (old_carry as u8) << 7 | value >> 1;
-                self.zero_flag = value == 0;
+                value = self.rotate_right(value);
                 self.bus.write(addr, value);
             },
 
             Op::rrca => {
                 let mut value = self.read_reg8(Reg8::A);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = (self.carry_flag as u8) << 7 | value >> 1;
-                self.zero_flag = value == 0;
+                value = self.rotate_right_carry(value);
+                self.flags.remove(ZERO);
                 self.write_reg8(Reg8::A, value);
             },
             Op::rrc { src } => {
                 let mut value = self.read_reg8(src);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = (self.carry_flag as u8) << 7 | value >> 1;
-                self.zero_flag = value == 0;
+                value = self.rotate_right_carry(value);
                 self.write_reg8(src, value);
             },
             Op::rrc_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let mut value = self.bus.read(addr);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = (self.carry_flag as u8) << 7 | value >> 1;
-                self.zero_flag = value == 0;
+                value = self.rotate_right_carry(value);
                 self.bus.write(addr, value);
             },
 
             Op::sla { src } => {
                 let mut value = self.read_reg8(src);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1;
-                self.zero_flag = value == 0;
+                value = self.shift_left_arithmetic(value);
                 self.write_reg8(src, value);
             },
             Op::sla_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let mut value = self.bus.read(addr);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 7) == 1;
-                value = value << 1;
-                self.zero_flag = value == 0;
+                value = self.shift_left_arithmetic(value);
                 self.bus.write(addr, value);
             },
             Op::sra { src } => {
                 let mut value = self.read_reg8(src);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = value >> 1;
-                self.zero_flag = value == 0;
+                value = self.shift_right_arithmetic(value);
                 self.write_reg8(src, value);
             },
             Op::sra_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let mut value = self.bus.read(addr);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = value >> 1;
-                self.zero_flag = value == 0;
+                value = self.shift_right_arithmetic(value);
                 self.bus.write(addr, value);
             },
             Op::srl { src } => {
                 let mut value = self.read_reg8(src);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = reset_bit!(value >> 1, 7);
-                self.zero_flag = value == 0;
+                value = self.shift_right_logical(value);
                 self.write_reg8(src, value);
             },
             Op::srl_ind => {
                 let addr = self.read_reg16(Reg16::HL);
                 let mut value = self.bus.read(addr);
-                self.reset_flags();
-                self.carry_flag = get_bit!(value, 0) == 1;
-                value = reset_bit!(value >> 1, 7);
-                self.zero_flag = value == 0;
+                value = self.shift_right_logical(value);
                 self.bus.write(addr, value);
             },
 
             /* Bit operation instructions */
             Op::bit { src, bit } => {
                 let value = self.read_reg8(src);
-                self.sub_flag = false;
-                self.hcarry_flag = true;
-                self.zero_flag = get_bit!(value, bit) == 0;
+                self.flags = self.flags | HCARRY |
+                             ZERO.test(get_bit!(value, bit) == 0);
+                self.flags.remove(SUB);
             },
             Op::bit_ind { bit } => {
                 let addr = self.read_reg16(Reg16::HL);
                 let value = self.bus.read(addr);
-                self.sub_flag = false;
-                self.hcarry_flag = true;
-                self.zero_flag = get_bit!(value, bit) == 0;
+                self.flags = self.flags | HCARRY |
+                             ZERO.test(get_bit!(value, bit) == 0);
+                self.flags.remove(SUB);
             },
             Op::set { src, bit } => {
                 let value = self.read_reg8(src);
@@ -771,45 +729,45 @@ impl<B> Cpu<B> where B: Bus {
             /* Misc instructions */
             Op::daa => {
                 let mut value = self.read_reg8(Reg8::A);
-                if !self.sub_flag {
-                    if self.carry_flag || value > 0x99 {
+                if !self.flags.contains(SUB) {
+                    if self.flags.contains(CARRY) || value > 0x99 {
                         value = value.wrapping_add(0x60);
-                        self.carry_flag = true;
+                        self.flags.insert(CARRY);
                     }
-                    if self.hcarry_flag || value & 0x0f > 0x09 {
+                    if self.flags.contains(HCARRY) || value & 0x0f > 0x09 {
                         value = value.wrapping_add(0x06);
                     }
                 } else {
-                    if self.carry_flag {
-                        if self.hcarry_flag {
+                    if self.flags.contains(CARRY) {
+                        if self.flags.contains(HCARRY) {
                             value = value.wrapping_add(0x9a);
                         } else {
                             value = value.wrapping_add(0xa0);
                         }
-                    } else if self.hcarry_flag {
+                    } else if self.flags.contains(HCARRY) {
                         value += value.wrapping_add(0xfa);
                     }
                 }
-                self.hcarry_flag = false;
-                self.zero_flag = value == 0;
+                self.flags.remove(HCARRY);
+                self.flags = self.flags | ZERO.test(value == 0);
                 self.write_reg8(Reg8::A, value);
             },
 
             Op::cpl => {
                 let value = self.read_reg8(Reg8::A);
-                self.sub_flag = true;
-                self.hcarry_flag = true;
+                self.flags.insert(SUB);
+                self.flags.insert(HCARRY);
                 self.write_reg8(Reg8::A, !value);
             },
             Op::ccf => {
-                self.sub_flag = false;
-                self.hcarry_flag = false;
-                self.carry_flag ^= true;
+                self.flags.remove(SUB);
+                self.flags.remove(HCARRY);
+                self.flags.toggle(CARRY);
             },
             Op::scf => {
-                self.sub_flag = false;
-                self.hcarry_flag = false;
-                self.carry_flag = true;
+                self.flags.remove(SUB);
+                self.flags.remove(HCARRY);
+                self.flags.insert(CARRY);
             },
 
             _ => panic!("Trying to execute non-implemented instruction {}.\n{}", 
@@ -891,38 +849,32 @@ impl<B> Cpu<B> where B: Bus {
         self.last_cycles * 4
     }
 
-    fn reset_flags(&mut self) {
-        self.zero_flag = false;
-        self.sub_flag = false;
-        self.carry_flag = false;
-        self.hcarry_flag = false;
-    }
-
     fn alu_add_bytes(&mut self, a: u8, b: u8, with_carry: bool) -> u8 {
         let bc = b.wrapping_add(with_carry as u8);
         let res = a.wrapping_add(bc);
 
-        self.zero_flag = res == 0;
-        self.sub_flag = false;
-
         let a_7 = get_bit!(a, 7);
         let bc_7 = get_bit!(bc, 7);
         let res_7 = get_bit!(res, 7);
-        self.carry_flag = ((a_7 | bc_7) == 1 && res_7 == 0) 
-                        || (a_7 & bc_7) == 1 && res_7 == 1;
         let a_3 = get_bit!(a, 3);
         let bc_3 = get_bit!(bc, 3);
         let res_3 = get_bit!(res, 3);
-        self.hcarry_flag = ((a_3 | bc_3) == 1 && res_3 == 0) 
-                        || (a_3 & bc_3) == 1 && res_3 == 1;
+
+        self.flags = ZERO.test(res == 0) |
+                     CARRY.test(((a_7 | bc_7) == 1 && res_7 == 0) 
+                        || (a_7 & bc_7) == 1 && res_7 == 1) |
+                     HCARRY.test(((a_3 | bc_3) == 1 && res_3 == 0) 
+                        || (a_3 & bc_3) == 1 && res_3 == 1);
         return res;
     }
 
     fn alu_sub_bytes(&mut self, a: u8, b: u8, with_carry: bool) -> u8 {
         let res = self.alu_add_bytes(a, (!b).wrapping_add(1), with_carry);
-        self.sub_flag = true;
-        self.carry_flag = !self.carry_flag;
-        self.hcarry_flag = !self.hcarry_flag;
+
+        self.flags = self.flags |
+                     SUB |
+                     CARRY.test(!self.flags.contains(CARRY)) |
+                     HCARRY.test(!self.flags.contains(HCARRY));
         return res;
     }
 
@@ -930,53 +882,47 @@ impl<B> Cpu<B> where B: Bus {
         let bc = b.wrapping_add(with_carry as u16);
         let res = a.wrapping_add(bc);
 
-        self.sub_flag = false;
         let a_15 = get_bit!(a, 15);
         let bc_15 = get_bit!(bc, 15);
         let res_15 = get_bit!(res, 15);
-        self.carry_flag = ((a_15 | bc_15) == 1 && res_15 == 0) 
-                        || (a_15 & bc_15) == 1 && res_15 == 1;
         let a_11 = get_bit!(a, 11);
         let bc_11 = get_bit!(bc, 11);
         let res_11 = get_bit!(res, 11);
-        self.hcarry_flag = ((a_11 | bc_11) == 1 && res_11 == 0) 
-                        || (a_11 & bc_11) == 1 && res_11 == 1;
+
+        self.flags = self.flags |
+                     CARRY.test(((a_15 | bc_15) == 1 && res_15 == 0) 
+                        || (a_15 & bc_15) == 1 && res_15 == 1) |
+                     HCARRY.test(((a_11 | bc_11) == 1 && res_11 == 0) 
+                        || (a_11 & bc_11) == 1 && res_11 == 1);
+        self.flags.remove(SUB);
         return res;
     }
 
     fn alu_and_bytes(&mut self, a: u8, b: u8) -> u8 {
         let res = a & b;
-        self.zero_flag = res == 0;
-        self.sub_flag = false;
-        self.carry_flag = false;
-        self.hcarry_flag = true;
+        self.flags = ZERO.test(res == 0) |
+                     HCARRY.test(true);
         return res;
     }
 
     fn alu_or_bytes(&mut self, a: u8, b: u8) -> u8 {
         let res = a | b;
-        self.zero_flag = res == 0;
-        self.sub_flag = false;
-        self.carry_flag = false;
-        self.hcarry_flag = false;
+        self.flags = ZERO.test(res == 0);
         return res;
     }
 
     fn alu_xor_bytes(&mut self, a: u8, b: u8) -> u8 {
         let res = a ^ b;
-        self.zero_flag = res == 0;
-        self.sub_flag = false;
-        self.carry_flag = false;
-        self.hcarry_flag = false;
+        self.flags = ZERO.test(res == 0);
         return res;
     }
 
     fn jmp_cond_fulfilled(&self, cond: &Condition) -> bool {
         match cond {
-            &Condition::Z  => self.zero_flag,
-            &Condition::C  => self.carry_flag,
-            &Condition::NC => !self.carry_flag,
-            &Condition::NZ => !self.zero_flag,
+            &Condition::Z  => self.flags.contains(ZERO),
+            &Condition::C  => self.flags.contains(CARRY),
+            &Condition::NC => !self.flags.contains(CARRY),
+            &Condition::NZ => !self.flags.contains(ZERO),
         }
     }
 }
@@ -986,8 +932,8 @@ impl<B> fmt::Display for Cpu<B> where B: Bus {
         try!(writeln!(f, "PC: {:#06x}", self.pc));
         try!(writeln!(f, "SP: {:#06x}", self.sp));
         try!(writeln!(f, "Z: {}, S: {}, C: {}, HC: {}",
-            self.zero_flag as u8, self.sub_flag as u8,
-            self.carry_flag as u8, self.hcarry_flag as u8));
+            self.flags.contains(ZERO) as u8, self.flags.contains(SUB) as u8,
+            self.flags.contains(CARRY) as u8, self.flags.contains(HCARRY) as u8));
         try!(writeln!(f, "A | {:#04x} | {:#04x} | F", self.regs[0], self.regs[1]));
         try!(writeln!(f, "B | {:#04x} | {:#04x} | C", self.regs[2], self.regs[3]));
         try!(writeln!(f, "D | {:#04x} | {:#04x} | E", self.regs[4], self.regs[5]));
