@@ -195,8 +195,8 @@ for code in range(0, 256):
             src = (2*[b, c, d, e, h, l, hl, a])[lo]
             cycles = 1
 
-        dest = [[b, c], [d, e], [h, l], [hl, a]][hi-4][0 if 0 <= lo <= 6 else 1]
-        if hi == 7 and 0 <= lo <= 5:
+        dest = [[b, c], [d, e], [h, l], [hl, a]][hi-4][0 if 0 <= lo <= 7 else 1]
+        if hi == 7 and (0 <= lo <= 5 or lo == 7):
             op = "st8_ind_r16"
             dbits = 16
             src = ""

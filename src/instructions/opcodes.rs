@@ -82,7 +82,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::B, src: Reg8::H }, None), //0x44
     (ld8_rr { dest: Reg8::B, src: Reg8::L }, None), //0x45
     (ld8_ind_r16 { src: Reg16::HL }, None), //0x46
-    (ld8_rr { dest: Reg8::C, src: Reg8::A }, None), //0x47
+    (ld8_rr { dest: Reg8::B, src: Reg8::A }, None), //0x47
     (ld8_rr { dest: Reg8::C, src: Reg8::B }, None), //0x48
     (ld8_rr { dest: Reg8::C, src: Reg8::C }, None), //0x49
     (ld8_rr { dest: Reg8::C, src: Reg8::D }, None), //0x4A
@@ -98,7 +98,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::D, src: Reg8::H }, None), //0x54
     (ld8_rr { dest: Reg8::D, src: Reg8::L }, None), //0x55
     (ld8_ind_r16 { src: Reg16::HL }, None), //0x56
-    (ld8_rr { dest: Reg8::E, src: Reg8::A }, None), //0x57
+    (ld8_rr { dest: Reg8::D, src: Reg8::A }, None), //0x57
     (ld8_rr { dest: Reg8::E, src: Reg8::B }, None), //0x58
     (ld8_rr { dest: Reg8::E, src: Reg8::C }, None), //0x59
     (ld8_rr { dest: Reg8::E, src: Reg8::D }, None), //0x5A
@@ -114,7 +114,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::H, src: Reg8::H }, None), //0x64
     (ld8_rr { dest: Reg8::H, src: Reg8::L }, None), //0x65
     (ld8_ind_r16 { src: Reg16::HL }, None), //0x66
-    (ld8_rr { dest: Reg8::L, src: Reg8::A }, None), //0x67
+    (ld8_rr { dest: Reg8::H, src: Reg8::A }, None), //0x67
     (ld8_rr { dest: Reg8::L, src: Reg8::B }, None), //0x68
     (ld8_rr { dest: Reg8::L, src: Reg8::C }, None), //0x69
     (ld8_rr { dest: Reg8::L, src: Reg8::D }, None), //0x6A
@@ -130,7 +130,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (st8_ind_r16 { dest: Reg16::HL }, None), //0x74
     (st8_ind_r16 { dest: Reg16::HL }, None), //0x75
     (ld8_ind_r16 { src: Reg16::HL }, None), //0x76
-    (ld8_rr { dest: Reg8::A, src: Reg8::A }, None), //0x77
+    (st8_ind_r16 { dest: Reg16::HL }, None), //0x77
     (ld8_rr { dest: Reg8::A, src: Reg8::B }, None), //0x78
     (ld8_rr { dest: Reg8::A, src: Reg8::C }, None), //0x79
     (ld8_rr { dest: Reg8::A, src: Reg8::D }, None), //0x7A
