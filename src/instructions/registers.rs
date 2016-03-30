@@ -1,5 +1,6 @@
 
 #[derive(Copy, Clone, Debug)]
+#[allow(dead_code)]
 pub enum Reg8 {
     A = 0,
     F = 1,

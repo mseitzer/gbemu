@@ -135,8 +135,4 @@ impl Gpu {
     pub fn write_line_match_reg(&mut self, value: u8) {
         self.line_match_reg = value;
     }
-
-    pub fn line_match(&self) -> bool {
-        self.line_match_stat_int && self.line == self.line_match_reg
-    }
 }

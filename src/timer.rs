@@ -63,7 +63,7 @@ impl Timer {
 		self.divider_reg
 	}
 
-	pub fn write_divider_reg(&mut self, value: u8) {
+	pub fn write_divider_reg(&mut self, _: u8) {
 		self.divider_reg = 0;
 	}
 
