@@ -72,9 +72,10 @@ for code in range(0, 256):
         cycles = 3
 
     elif lo == 2 and 0 <= hi <= 1:
-        op = "st8_ind_r16"
+        op = "st8_ind_reg"
         dest = [bc, de][hi]
         dbits = 16
+        src = a
         cycles = 2
     elif lo == 2 and hi == 2:
         op = "st8_ind_inc"
@@ -147,9 +148,10 @@ for code in range(0, 256):
         cycles = 2
 
     elif lo == 0xA and 0 <= hi <= 1:
-        op = "ld8_ind_r16"
+        op = "ld8_ind_reg"
         src = [bc, de][hi]
         sbits = 16
+        dest = a
         cycles = 2
     elif lo == 0xA and 2 <= hi <= 3:
         op = ["ld8_ind_inc", "ld8_ind_dec"][hi-2]
@@ -186,7 +188,7 @@ for code in range(0, 256):
 
     elif 4 <= hi <= 7:
         if lo == 6 or lo == 0xE:
-            op = "ld8_ind_r16"
+            op = "ld8_ind_reg"
             src = "HL"
             sbits = 16
             cycles = 2
@@ -197,16 +199,16 @@ for code in range(0, 256):
 
         dest = [[b, c], [d, e], [h, l], [hl, a]][hi-4][0 if 0 <= lo <= 7 else 1]
         if hi == 7 and (0 <= lo <= 5 or lo == 7):
-            op = "st8_ind_r16"
+            op = "st8_ind_reg"
+            dest = "HL"
             dbits = 16
-            src = ""
             cycles = 2
-        if lo == 6 or lo == 0xE:
-            dest = ""
     
-    elif hi == 7 and lo == 6:
-        op = "halt"
-        cycles = 1
+        elif hi == 7 and lo == 6:
+            op = "halt"
+            dest = ""
+            src = ""
+            cycles = 1
 
     elif 8 <= hi <= 0xB:
         op = [["add8_", "adc8_"], ["sub8_", "sbc8_"], 
@@ -244,8 +246,8 @@ for code in range(0, 256):
         cycles = 3
         jcycles = 4
 
-    elif lo == 2 and 0xE <= hi <= 0xE:
-        op = ["out8_ofs", "in8_ofs"][hi-0xE]
+    elif lo == 2 and 0xE <= hi <= 0xF:
+        op = ["out8_reg", "in8_reg"][hi-0xE]
         cycles = 2
 
     elif lo == 3 and hi == 0xC:

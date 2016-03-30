@@ -37,8 +37,8 @@ pub enum Op {
     ei,
 
     ld8_imm { dest: Reg8 },         // dest = imm8
-    ld8_rr { dest: Reg8, src: Reg8 }, // dest = src
-    ld8_ind_r16 { src: Reg16 },     // A = (BC/DE/HL)
+    ld8_rr { dest: Reg8, src: Reg8 },       // dest = src
+    ld8_ind_reg { dest: Reg8, src: Reg16 }, // dest = (BC/DE/HL)
     ld8_ind_imm16,                  // A = (imm16)
     ld8_ind_dec,                    // A = (HL); HL--
     ld8_ind_inc,                    // A = (HL); HL++
@@ -49,7 +49,7 @@ pub enum Op {
     ld16_lea,                       // HL = SP+imm8
  
     st8_ind_imm,                    // (HL) = imm8
-    st8_ind_r16 { dest: Reg16 },    // (BC/DE/HL) = A
+    st8_ind_reg { dest: Reg16, src: Reg8 }, // (BC/DE/HL) = reg
     st8_ind_imm16,                  // (imm16) = A
     st8_ind_dec,                    // (HL) = A; HL--
     st8_ind_inc,                    // (HL) = A; HL++
@@ -59,9 +59,9 @@ pub enum Op {
     push16 { src: Reg16 },          // (SP) = AF/BC/DE/HL; SP-=2
     pop16 { dest: Reg16 },          // AF/BC/DE/HL = (SP); SP+=2
 
-    in8_ofs,                        // A = ($FF00+C)
+    in8_reg,                        // A = ($FF00+C)
     in8_imm,                        // A = ($FF00+imm8)
-    out8_ofs,                       // ($FF00+C) = A
+    out8_reg,                       // ($FF00+C) = A
     out8_imm,                       // ($FF00+imm8) = A
 
     add8_reg { src: Reg8 },         // A += src

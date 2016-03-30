@@ -13,7 +13,7 @@ const IMM16: Immediate = Immediate::Imm16(0);
 pub const OPCODES: [(Op, Immediate); 256] = [
     (nop, None), //0x00
     (ld16_imm { dest: Reg16::BC }, IMM16), //0x01
-    (st8_ind_r16 { dest: Reg16::BC }, None), //0x02
+    (st8_ind_reg { dest: Reg16::BC, src: Reg8::A }, None), //0x02
     (inc16_reg { src: Reg16::BC }, None), //0x03
     (inc8_reg { src: Reg8::B }, None), //0x04
     (dec8_reg { src: Reg8::B }, None), //0x05
@@ -21,7 +21,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (rlca, None), //0x07
     (st16_sp, IMM16), //0x08
     (add16_reg { src: Reg16::BC }, None), //0x09
-    (ld8_ind_r16 { src: Reg16::BC }, None), //0x0A
+    (ld8_ind_reg { dest: Reg8::A, src: Reg16::BC }, None), //0x0A
     (dec16_reg { src: Reg16::BC }, None), //0x0B
     (inc8_reg { src: Reg8::C }, None), //0x0C
     (dec8_reg { src: Reg8::C }, None), //0x0D
@@ -29,7 +29,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (rrca, None), //0x0F
     (stop, None), //0x10
     (ld16_imm { dest: Reg16::DE }, IMM16), //0x11
-    (st8_ind_r16 { dest: Reg16::DE }, None), //0x12
+    (st8_ind_reg { dest: Reg16::DE, src: Reg8::A }, None), //0x12
     (inc16_reg { src: Reg16::DE }, None), //0x13
     (inc8_reg { src: Reg8::D }, None), //0x14
     (dec8_reg { src: Reg8::D }, None), //0x15
@@ -37,7 +37,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (rla, None), //0x17
     (jp_rel, IMM8), //0x18
     (add16_reg { src: Reg16::DE }, None), //0x19
-    (ld8_ind_r16 { src: Reg16::DE }, None), //0x1A
+    (ld8_ind_reg { dest: Reg8::A, src: Reg16::DE }, None), //0x1A
     (dec16_reg { src: Reg16::DE }, None), //0x1B
     (inc8_reg { src: Reg8::E }, None), //0x1C
     (dec8_reg { src: Reg8::E }, None), //0x1D
@@ -81,7 +81,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::B, src: Reg8::E }, None), //0x43
     (ld8_rr { dest: Reg8::B, src: Reg8::H }, None), //0x44
     (ld8_rr { dest: Reg8::B, src: Reg8::L }, None), //0x45
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x46
+    (ld8_ind_reg { dest: Reg8::B, src: Reg16::HL }, None), //0x46
     (ld8_rr { dest: Reg8::B, src: Reg8::A }, None), //0x47
     (ld8_rr { dest: Reg8::C, src: Reg8::B }, None), //0x48
     (ld8_rr { dest: Reg8::C, src: Reg8::C }, None), //0x49
@@ -89,7 +89,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::C, src: Reg8::E }, None), //0x4B
     (ld8_rr { dest: Reg8::C, src: Reg8::H }, None), //0x4C
     (ld8_rr { dest: Reg8::C, src: Reg8::L }, None), //0x4D
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x4E
+    (ld8_ind_reg { dest: Reg8::C, src: Reg16::HL }, None), //0x4E
     (ld8_rr { dest: Reg8::C, src: Reg8::A }, None), //0x4F
     (ld8_rr { dest: Reg8::D, src: Reg8::B }, None), //0x50
     (ld8_rr { dest: Reg8::D, src: Reg8::C }, None), //0x51
@@ -97,7 +97,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::D, src: Reg8::E }, None), //0x53
     (ld8_rr { dest: Reg8::D, src: Reg8::H }, None), //0x54
     (ld8_rr { dest: Reg8::D, src: Reg8::L }, None), //0x55
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x56
+    (ld8_ind_reg { dest: Reg8::D, src: Reg16::HL }, None), //0x56
     (ld8_rr { dest: Reg8::D, src: Reg8::A }, None), //0x57
     (ld8_rr { dest: Reg8::E, src: Reg8::B }, None), //0x58
     (ld8_rr { dest: Reg8::E, src: Reg8::C }, None), //0x59
@@ -105,7 +105,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::E, src: Reg8::E }, None), //0x5B
     (ld8_rr { dest: Reg8::E, src: Reg8::H }, None), //0x5C
     (ld8_rr { dest: Reg8::E, src: Reg8::L }, None), //0x5D
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x5E
+    (ld8_ind_reg { dest: Reg8::E, src: Reg16::HL }, None), //0x5E
     (ld8_rr { dest: Reg8::E, src: Reg8::A }, None), //0x5F
     (ld8_rr { dest: Reg8::H, src: Reg8::B }, None), //0x60
     (ld8_rr { dest: Reg8::H, src: Reg8::C }, None), //0x61
@@ -113,7 +113,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::H, src: Reg8::E }, None), //0x63
     (ld8_rr { dest: Reg8::H, src: Reg8::H }, None), //0x64
     (ld8_rr { dest: Reg8::H, src: Reg8::L }, None), //0x65
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x66
+    (ld8_ind_reg { dest: Reg8::H, src: Reg16::HL }, None), //0x66
     (ld8_rr { dest: Reg8::H, src: Reg8::A }, None), //0x67
     (ld8_rr { dest: Reg8::L, src: Reg8::B }, None), //0x68
     (ld8_rr { dest: Reg8::L, src: Reg8::C }, None), //0x69
@@ -121,23 +121,23 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_rr { dest: Reg8::L, src: Reg8::E }, None), //0x6B
     (ld8_rr { dest: Reg8::L, src: Reg8::H }, None), //0x6C
     (ld8_rr { dest: Reg8::L, src: Reg8::L }, None), //0x6D
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x6E
+    (ld8_ind_reg { dest: Reg8::L, src: Reg16::HL }, None), //0x6E
     (ld8_rr { dest: Reg8::L, src: Reg8::A }, None), //0x6F
-    (st8_ind_r16 { dest: Reg16::HL }, None), //0x70
-    (st8_ind_r16 { dest: Reg16::HL }, None), //0x71
-    (st8_ind_r16 { dest: Reg16::HL }, None), //0x72
-    (st8_ind_r16 { dest: Reg16::HL }, None), //0x73
-    (st8_ind_r16 { dest: Reg16::HL }, None), //0x74
-    (st8_ind_r16 { dest: Reg16::HL }, None), //0x75
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x76
-    (st8_ind_r16 { dest: Reg16::HL }, None), //0x77
+    (st8_ind_reg { dest: Reg16::HL, src: Reg8::B }, None), //0x70
+    (st8_ind_reg { dest: Reg16::HL, src: Reg8::C }, None), //0x71
+    (st8_ind_reg { dest: Reg16::HL, src: Reg8::D }, None), //0x72
+    (st8_ind_reg { dest: Reg16::HL, src: Reg8::E }, None), //0x73
+    (st8_ind_reg { dest: Reg16::HL, src: Reg8::H }, None), //0x74
+    (st8_ind_reg { dest: Reg16::HL, src: Reg8::L }, None), //0x75
+    (halt, None), //0x76
+    (st8_ind_reg { dest: Reg16::HL, src: Reg8::A }, None), //0x77
     (ld8_rr { dest: Reg8::A, src: Reg8::B }, None), //0x78
     (ld8_rr { dest: Reg8::A, src: Reg8::C }, None), //0x79
     (ld8_rr { dest: Reg8::A, src: Reg8::D }, None), //0x7A
     (ld8_rr { dest: Reg8::A, src: Reg8::E }, None), //0x7B
     (ld8_rr { dest: Reg8::A, src: Reg8::H }, None), //0x7C
     (ld8_rr { dest: Reg8::A, src: Reg8::L }, None), //0x7D
-    (ld8_ind_r16 { src: Reg16::HL }, None), //0x7E
+    (ld8_ind_reg { dest: Reg8::A, src: Reg16::HL }, None), //0x7E
     (ld8_rr { dest: Reg8::A, src: Reg8::A }, None), //0x7F
     (add8_reg { src: Reg8::B }, None), //0x80
     (add8_reg { src: Reg8::C }, None), //0x81
@@ -237,7 +237,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (rst { target: 0x18 }, None), //0xDF
     (out8_imm, IMM8), //0xE0
     (pop16 { dest: Reg16::HL }, None), //0xE1
-    (out8_ofs, None), //0xE2
+    (out8_reg, None), //0xE2
     (inv, None), //0xE3
     (inv, None), //0xE4
     (push16 { src: Reg16::HL }, None), //0xE5
@@ -253,7 +253,7 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (rst { target: 0x28 }, None), //0xEF
     (in8_imm, IMM8), //0xF0
     (pop16 { dest: Reg16::AF }, None), //0xF1
-    (inv, None), //0xF2
+    (in8_reg, None), //0xF2
     (di, None), //0xF3
     (inv, None), //0xF4
     (push16 { src: Reg16::AF }, None), //0xF5
@@ -532,18 +532,18 @@ pub fn cycles(opcode: &Op) -> u8 {
     match *opcode {
         nop | inc8_reg {..} | dec8_reg {..} | rlca | rrca | stop 
         | rla | rra | daa | cpl | inc8_ind | scf | ccf | ld8_rr {..} 
-        | add8_reg {..} | adc8_reg {..} | sub8_reg {..} | sbc8_reg {..} 
+        | halt | add8_reg {..} | adc8_reg {..} | sub8_reg {..} | sbc8_reg {..} 
         | and8_reg {..} | xor8_reg {..} | or8_reg {..} | cp8_reg {..} 
         | di | ei => 1,
-        st8_ind_r16 {..} | inc16_reg {..} | ld8_imm {..} | add16_reg {..} 
-        | ld8_ind_r16 {..} | dec16_reg {..} | st8_ind_inc | ld8_ind_inc 
+        st8_ind_reg {..} | inc16_reg {..} | ld8_imm {..} | add16_reg {..} 
+        | ld8_ind_reg {..} | dec16_reg {..} | st8_ind_inc | ld8_ind_inc 
         | st8_ind_dec | inc16_sp | add16_sp | ld8_ind_dec | dec16_sp 
         | add8_ind | adc8_ind | sub8_ind | sbc8_ind | and8_ind | xor8_ind 
         | or8_ind | cp8_ind | pop16 {..} | add8_imm | ret_cond {..} 
-        | adc8_imm | sub8_imm | sbc8_imm | out8_ofs | and8_imm | xor8_imm 
-        | or8_imm | ld16_sp | cp8_imm | rlc {..} | rrc {..} | rl {..} 
-        | rr {..} | sla {..} | sra {..} | swap {..} | srl {..} | bit {..} 
-        | res {..} | set {..} => 2,
+        | adc8_imm | sub8_imm | sbc8_imm | out8_reg | and8_imm | xor8_imm 
+        | in8_reg | or8_imm | ld16_sp | cp8_imm | rlc {..} | rrc {..} 
+        | rl {..} | rr {..} | sla {..} | sra {..} | swap {..} | srl {..} 
+        | bit {..} | res {..} | set {..} => 2,
         ld16_imm {..} | ld16_sp_imm | dec8_ind | st8_ind_imm | out8_imm 
         | in8_imm | ld16_lea => 3,
         push16 {..} | rst {..} | add8_sp_imm | st8_ind_imm16 | ld8_ind_imm16 

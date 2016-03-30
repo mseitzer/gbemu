@@ -187,10 +187,10 @@ impl<B> Cpu<B> where B: Bus {
                 let value = self.read_reg8(src);
                 self.write_reg8(dest, value);
             },
-            Op::ld8_ind_r16 { src } => {
+            Op::ld8_ind_reg { dest, src } => {
                 let addr = self.read_reg16(src);
                 let value = self.bus.read(addr);
-                self.write_reg8(Reg8::A, value);
+                self.write_reg8(dest, value);
             },
             Op::ld8_ind_imm16 => {
                 let value = self.bus.read(instr.imm.imm16());
@@ -227,8 +227,8 @@ impl<B> Cpu<B> where B: Bus {
                 let addr = self.read_reg16(Reg16::HL);
                 self.bus.write(addr, instr.imm.imm8());
             },
-            Op::st8_ind_r16 { dest } => {
-                let value = self.read_reg8(Reg8::A);
+            Op::st8_ind_reg { dest, src } => {
+                let value = self.read_reg8(src);
                 let addr = self.read_reg16(dest);
                 self.bus.write(addr, value);
             },
@@ -263,7 +263,7 @@ impl<B> Cpu<B> where B: Bus {
             },
 
             /* I/O instructions */
-            Op::in8_ofs => {
+            Op::in8_reg => {
                 let ofs = self.read_reg8(Reg8::C) as u16;
                 let value = self.bus.read(mem_map::IO_LO + ofs);
                 self.write_reg8(Reg8::A, value);
@@ -273,7 +273,7 @@ impl<B> Cpu<B> where B: Bus {
                 let value = self.bus.read(mem_map::IO_LO + ofs);
                 self.write_reg8(Reg8::A, value);
             },
-            Op::out8_ofs => {
+            Op::out8_reg => {
                 let value = self.read_reg8(Reg8::A);
                 let ofs = self.read_reg8(Reg8::C) as u16;
                 self.bus.write(mem_map::IO_LO + ofs, value)
