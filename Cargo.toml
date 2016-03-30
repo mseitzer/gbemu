@@ -1,0 +1,7 @@
+[package]
+name = "gbemu"
+version = "0.1.0"
+
+[dependencies]
+bitflags = "0.5.0"
+getopts = "0.2.14"
