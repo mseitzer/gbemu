@@ -27,8 +27,8 @@ impl DebugInfo {
 		self.breakpoints.insert(addr);
 	}
 
-	pub fn remove_breakpoint(&mut self, addr: u16) {
-		self.breakpoints.remove(&addr);
+	pub fn remove_breakpoint(&mut self, addr: u16) -> bool {
+		self.breakpoints.remove(&addr)
 	}
 
 	pub fn contains_breakpoint(&self, addr: u16) -> bool {
