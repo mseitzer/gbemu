@@ -50,3 +50,23 @@ fn test_indirect_load8() {
         };
     }
 }
+
+#[test]
+fn test_immediate_load16() {
+    // LD Reg16, Imm16
+    let regs = [Reg16::BC, Reg16::DE, Reg16::HL, Reg16::SP];
+
+    for dest in regs.iter() {
+        let op = Op::ld16_imm { dest: *dest };
+        let cpu = test_instr(
+            Instr { op: op, imm: Immediate::Imm16(0x4488) },
+            &[0x00],
+            |cpu| {
+                cpu.regs.write16(*dest, 0x3333);
+            }
+        );
+
+        assert_eq!(cpu.last_cycles, 3);
+        assert_eq!(cpu.regs.read16(*dest), 0x4488);
+    }
+}

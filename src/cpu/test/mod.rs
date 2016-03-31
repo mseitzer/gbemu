@@ -147,8 +147,6 @@ fn test_opcodes() {
         (vec![0x7F], Op::ld8_rr { dest: A, src: A }, None),
     ];
 
-
-
     for (code, op, imm) in opcodes {
         let len = code.len();
         let mut cpu = Cpu::new(create_hardware(code));
