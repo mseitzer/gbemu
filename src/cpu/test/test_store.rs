@@ -12,8 +12,8 @@ fn test_indirect_store8() {
             Instr { op: op, imm: Immediate::None },
             &[0x00, 0xff],
             |cpu| {
-                cpu.write_reg8(*src, 0x42);
-                cpu.write_reg16(Reg16::HL, 0x0001);
+                cpu.regs.write8(*src, 0x42);
+                cpu.regs.write16(Reg16::HL, 0x0001);
             }
         );
 
@@ -23,6 +23,6 @@ fn test_indirect_store8() {
             Reg8::L => assert_eq!(cpu.bus.read(0x0001), 0x01),
             _       => assert_eq!(cpu.bus.read(0x0001), 0x42)
         };
-        assert_eq!(cpu.read_reg16(Reg16::HL), 0x0001);
+        assert_eq!(cpu.regs.read16(Reg16::HL), 0x0001);
     }
 }

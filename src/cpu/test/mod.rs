@@ -155,6 +155,6 @@ fn test_opcodes() {
         let instr = cpu.fetch_instr();
         assert_eq!(instr.op, op);
         assert_eq!(instr.imm, imm);
-        assert_eq!(cpu.pc as usize, len);
+        assert_eq!(cpu.regs.pc as usize, len);
     }
 }

@@ -38,7 +38,7 @@ impl DebugInfo {
 
 impl<B> super::Cpu<B> where B: Bus {
 	pub fn get_pc(&self) -> u16 {
-		self.pc
+		self.regs.pc
 	}
 
 	pub fn single_step(&mut self, db: &mut DebugInfo) {
@@ -53,11 +53,11 @@ impl<B> super::Cpu<B> where B: Bus {
 
 	pub fn continue_exec(&mut self, db: &mut DebugInfo) {
 		loop {
-			if db.breakpoints.contains(&self.pc) {
-				let orig_pc = self.pc;
+			if db.breakpoints.contains(&self.regs.pc) {
+				let orig_pc = self.regs.pc;
 				let instr = self.fetch_instr();
 				db.cur_instr = instr;
-				self.pc = orig_pc;
+				self.regs.pc = orig_pc;
 				break;
 			}
 

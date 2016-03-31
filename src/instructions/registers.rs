@@ -19,5 +19,6 @@ pub enum Reg16 {
     AF = 1,
     BC = 3,
     DE = 5,
-    HL = 7
+    HL = 7,
+    SP
 }
