@@ -34,7 +34,6 @@ impl Interrupt {
 
 bitflags! {
     flags InterruptFlags: u8 {
-        #[allow(dead_code)]
         const INT_VBLANK            = 1 << 0,
         const INT_LCDCSTATUS        = 1 << 1,
         const INT_TIMER             = 1 << 2,
@@ -81,7 +80,7 @@ impl IntController {
     }
 
     pub fn set_int_pending(&mut self, int: Interrupt) {
-        println!("Int Controller: Registered int {:?}", int);
+        //println!("Int Controller: Registered int {:?}", int);
         let flag = InterruptFlags::from_bits_truncate(int as u8);
         self.ints_pending = self.ints_pending | flag
     }

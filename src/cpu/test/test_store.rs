@@ -1,6 +1,6 @@
 use hardware::Bus;
 use super::{run_test, test_instr};
-use instructions::{Instr, Reg8, Reg16, Immediate, Op};
+use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
 
 #[test]
 fn test_indirect_store8() {
@@ -8,7 +8,7 @@ fn test_indirect_store8() {
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
     for src in regs.iter() {
-        let op = Op::st8_ind_reg { dest: Reg16::HL, src: *src };
+        let op = Op::st8_ind { dest: Addr::HL, src: *src };
         let cpu = test_instr(
             Instr { op: op, imm: Immediate::None },
             &[0x00, 0xff],

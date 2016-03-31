@@ -1,5 +1,5 @@
 use super::{run_test, test_instr};
-use instructions::{Instr, Reg8, Reg16, Immediate, Op};
+use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
 
 #[test]
 fn test_load8() {
@@ -31,7 +31,7 @@ fn test_indirect_load8() {
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
     for dest in regs.iter() {
-        let op = Op::ld8_ind_reg { dest: *dest, src: Reg16::HL };
+        let op = Op::ld8_ind { dest: *dest, src: Addr::HL };
         let cpu = test_instr(
             Instr { op: op, imm: Immediate::None },
             &[0x00, 0x42],

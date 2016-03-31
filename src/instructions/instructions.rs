@@ -27,6 +27,19 @@ pub enum Immediate {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
+pub enum Addr {
+    BC,
+    DE,
+    HL,
+    HLI,
+    HLD,
+    Imm,
+    IO,
+    IOC
+}
+
+#[derive(Copy, Clone, Debug)]
 #[allow(non_camel_case_types)]
 #[cfg_attr(test, derive(Eq, PartialEq))]
 pub enum Op {
@@ -40,21 +53,15 @@ pub enum Op {
     ei,
 
     ld8_imm { dest: Reg8 },         // dest = imm8
-    ld8_rr { dest: Reg8, src: Reg8 },       // dest = src
-    ld8_ind_reg { dest: Reg8, src: Reg16 }, // dest = (BC/DE/HL)
-    ld8_ind_imm16,                  // A = (imm16)
-    ld8_ind_dec,                    // A = (HL); HL--
-    ld8_ind_inc,                    // A = (HL); HL++
+    ld8_rr { dest: Reg8, src: Reg8 },  // dest = src
+    ld8_ind { dest: Reg8, src: Addr }, // dest = (src)
 
     ld16_sp,                        // SP = HL
     ld16_imm { dest: Reg16 },       // BC/DE/HL/SP = imm16
     ld16_lea,                       // HL = SP+imm8
  
     st8_ind_imm,                    // (HL) = imm8
-    st8_ind_reg { dest: Reg16, src: Reg8 }, // (BC/DE/HL) = reg
-    st8_ind_imm16,                  // (imm16) = A
-    st8_ind_dec,                    // (HL) = A; HL--
-    st8_ind_inc,                    // (HL) = A; HL++
+    st8_ind { dest: Addr, src: Reg8 }, // (src) = reg
 
     st16_sp,                        // (imm16) = SP
 

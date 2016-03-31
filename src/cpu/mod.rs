@@ -4,7 +4,7 @@ use hardware::{self, Bus};
 use int_controller::Interrupt;
 use mem_map;
 use instructions;
-use instructions::{Instr, Immediate, Op, Condition, Reg8, Reg16};
+use instructions::{Instr, Immediate, Op, Condition, Addr, Reg8, Reg16};
 
 mod registers;
 mod instr_impl;
@@ -131,27 +131,10 @@ impl<B> Cpu<B> where B: Bus {
                 let value = self.regs.read8(src);
                 self.regs.write8(dest, value);
             },
-            Op::ld8_ind_reg { dest, src } => {
-                let addr = self.regs.read16(src);
-                let value = self.bus.read(addr);
+            Op::ld8_ind { dest, src } => {;
+                let value = self.read_addr(src, &instr);
                 self.regs.write8(dest, value);
-            },
-            Op::ld8_ind_imm16 => {
-                let value = self.bus.read(instr.imm.imm16());
-                self.regs.write8(Reg8::A, value);
-            },
-            Op::ld8_ind_dec => {
-                let addr = self.regs.read16(Reg16::HL);
-                let value = self.bus.read(addr);
-                self.regs.write8(Reg8::A, value);
-                self.regs.write16(Reg16::HL, addr.wrapping_sub(1));
-            },
-            Op::ld8_ind_inc => {
-                let addr = self.regs.read16(Reg16::HL);
-                let value = self.bus.read(addr);
-                self.regs.write8(Reg8::A, value);
-                self.regs.write16(Reg16::HL, addr.wrapping_add(1));
-            },
+            }
 
             Op::ld16_sp => {
                 self.regs.sp = self.regs.read16(Reg16::HL);
@@ -168,26 +151,9 @@ impl<B> Cpu<B> where B: Bus {
                 let addr = self.regs.read16(Reg16::HL);
                 self.bus.write(addr, instr.imm.imm8());
             },
-            Op::st8_ind_reg { dest, src } => {
+            Op::st8_ind { dest, src } => {
                 let value = self.regs.read8(src);
-                let addr = self.regs.read16(dest);
-                self.bus.write(addr, value);
-            },
-            Op::st8_ind_imm16 => {
-                let value = self.regs.read8(Reg8::A);
-                self.bus.write(instr.imm.imm16(), value);
-            },
-            Op::st8_ind_dec => {
-                let value = self.regs.read8(Reg8::A);
-                let addr = self.regs.read16(Reg16::HL);
-                self.bus.write(addr, value);
-                self.regs.write16(Reg16::HL, addr.wrapping_sub(1));
-            },
-            Op::st8_ind_inc => {
-                let value = self.regs.read8(Reg8::A);
-                let addr = self.regs.read16(Reg16::HL);
-                self.bus.write(addr, value);
-                self.regs.write16(Reg16::HL, addr.wrapping_add(1));
+                self.write_addr(dest, &instr, value);
             },
             Op::st16_sp => {
                 let value = self.regs.sp;
@@ -713,9 +679,7 @@ impl<B> Cpu<B> where B: Bus {
         if toggle_ints {
             self.int_flag = !self.int_flag;
         }
-    }
-
-    
+    }    
 
     fn extract_instr8(&mut self) -> u8 {
         let addr = self.regs.pc;
@@ -729,6 +693,37 @@ impl<B> Cpu<B> where B: Bus {
         let value = self.read_word(addr);
         self.regs.pc = self.regs.pc.wrapping_add(2);
         return value;
+    }
+
+    fn resolve_addr(&mut self, addr: Addr, instr: &Instr) -> u16 {
+        match addr {
+            Addr::BC => self.regs.read16(Reg16::BC),
+            Addr::DE => self.regs.read16(Reg16::DE),
+            Addr::HL => self.regs.read16(Reg16::HL),
+            Addr::HLI => {
+                let value = self.regs.read16(Reg16::HL);
+                self.regs.write16(Reg16::HL, value.wrapping_add(1));
+                value
+            },
+            Addr::HLD => {
+                let value = self.regs.read16(Reg16::HL);
+                self.regs.write16(Reg16::HL, value.wrapping_sub(1));
+                value
+            },
+            Addr::Imm => instr.imm.imm16(),
+            Addr::IO => mem_map::IO_LO + instr.imm.imm8() as u16,
+            Addr::IOC => mem_map::IO_LO + self.regs.read8(Reg8::C) as u16
+        }
+    }
+
+    fn read_addr(&mut self, addr: Addr, instr: &Instr) -> u8 {
+        let addr_value = self.resolve_addr(addr, instr);
+        self.bus.read(addr_value)
+    }
+
+    fn write_addr(&mut self, addr: Addr, instr: &Instr, value: u8) {
+        let addr_value = self.resolve_addr(addr, instr);
+        self.bus.write(addr_value, value)
     }
 
     #[inline(always)]
