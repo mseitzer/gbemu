@@ -1,6 +1,7 @@
 
 #[derive(Copy, Clone, Debug)]
 #[allow(dead_code)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub enum Reg8 {
     A = 0,
     F = 1,
@@ -13,6 +14,7 @@ pub enum Reg8 {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub enum Reg16 {
     AF = 1,
     BC = 3,

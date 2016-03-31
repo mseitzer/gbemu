@@ -10,6 +10,7 @@ pub struct Instr {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub enum Condition {
     NZ,
     Z,
@@ -18,6 +19,7 @@ pub enum Condition {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub enum Immediate {
     None,
     Imm8(u8),
@@ -26,6 +28,7 @@ pub enum Immediate {
 
 #[derive(Copy, Clone, Debug)]
 #[allow(non_camel_case_types)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub enum Op {
     inv,
     ext,
