@@ -3,6 +3,7 @@ use instructions::{Instr, Reg8, Reg16, Immediate, Op};
 
 #[test]
 fn test_load8() {
+    // LD Reg8, Reg8
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
     for dest in regs.iter() {
@@ -26,6 +27,7 @@ fn test_load8() {
 
 #[test]
 fn test_indirect_load8() {
+    // LD Reg8, (HL)
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
     for dest in regs.iter() {

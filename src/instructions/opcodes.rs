@@ -60,17 +60,17 @@ pub const OPCODES: [(Op, Immediate); 256] = [
     (ld8_imm { dest: Reg8::L }, IMM8), //0x2E
     (cpl, None), //0x2F
     (jp_rel_cond { cond: Condition::NC }, IMM8), //0x30
-    (ld16_sp_imm, IMM16), //0x31
+    (ld16_imm { dest: Reg16::SP }, IMM16), //0x31
     (st8_ind_dec, None), //0x32
-    (inc16_sp, None), //0x33
+    (inc16_reg { src: Reg16::SP }, None), //0x33
     (inc8_ind, None), //0x34
     (dec8_ind, None), //0x35
     (st8_ind_imm, IMM8), //0x36
     (scf, None), //0x37
     (jp_rel_cond { cond: Condition::C }, IMM8), //0x38
-    (add16_sp, None), //0x39
+    (add16_reg { src: Reg16::SP }, None), //0x39
     (ld8_ind_dec, None), //0x3A
-    (dec16_sp, None), //0x3B
+    (dec16_reg { src: Reg16::SP }, None), //0x3B
     (inc8_reg { src: Reg8::A }, None), //0x3C
     (dec8_reg { src: Reg8::A }, None), //0x3D
     (ld8_imm { dest: Reg8::A }, IMM8), //0x3E
@@ -537,15 +537,14 @@ pub fn cycles(opcode: &Op) -> u8 {
         | di | ei => 1,
         st8_ind_reg {..} | inc16_reg {..} | ld8_imm {..} | add16_reg {..} 
         | ld8_ind_reg {..} | dec16_reg {..} | st8_ind_inc | ld8_ind_inc 
-        | st8_ind_dec | inc16_sp | add16_sp | ld8_ind_dec | dec16_sp 
-        | add8_ind | adc8_ind | sub8_ind | sbc8_ind | and8_ind | xor8_ind 
-        | or8_ind | cp8_ind | pop16 {..} | add8_imm | ret_cond {..} 
-        | adc8_imm | sub8_imm | sbc8_imm | out8_reg | and8_imm | xor8_imm 
-        | in8_reg | or8_imm | ld16_sp | cp8_imm | rlc {..} | rrc {..} 
-        | rl {..} | rr {..} | sla {..} | sra {..} | swap {..} | srl {..} 
-        | bit {..} | res {..} | set {..} => 2,
-        ld16_imm {..} | ld16_sp_imm | dec8_ind | st8_ind_imm | out8_imm 
-        | in8_imm | ld16_lea => 3,
+        | st8_ind_dec | ld8_ind_dec | add8_ind | adc8_ind | sub8_ind 
+        | sbc8_ind | and8_ind | xor8_ind | or8_ind | cp8_ind | pop16 {..} 
+        | add8_imm | ret_cond {..} | adc8_imm | sub8_imm | sbc8_imm 
+        | out8_reg | and8_imm | xor8_imm | in8_reg | or8_imm | ld16_sp 
+        | cp8_imm | rlc {..} | rrc {..} | rl {..} | rr {..} | sla {..} 
+        | sra {..} | swap {..} | srl {..} | bit {..} | res {..} | set {..} => 2,
+        ld16_imm {..} | dec8_ind | st8_ind_imm | out8_imm | in8_imm 
+        | ld16_lea => 3,
         push16 {..} | rst {..} | add8_sp_imm | st8_ind_imm16 | ld8_ind_imm16 
         | rlc_ind | rrc_ind | rl_ind | rr_ind | sla_ind | sra_ind 
         | swap_ind | srl_ind | bit_ind {..} | res_ind {..} | set_ind {..} => 4,

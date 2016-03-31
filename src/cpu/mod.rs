@@ -156,9 +156,6 @@ impl<B> Cpu<B> where B: Bus {
             Op::ld16_sp => {
                 self.regs.sp = self.regs.read16(Reg16::HL);
             },
-            Op::ld16_sp_imm => {
-                self.regs.sp = instr.imm.imm16();
-            },
             Op::ld16_imm { dest } => {
                 self.regs.write16(dest, instr.imm.imm16());
             },
@@ -257,11 +254,6 @@ impl<B> Cpu<B> where B: Bus {
             Op::add16_reg { src } => {
                 let value = self.regs.read16(Reg16::HL).wrapping_add(
                     self.regs.read16(src));
-                self.regs.write16(Reg16::HL, value);
-            },
-            Op::add16_sp => {
-                let value = self.regs.read16(Reg16::HL).wrapping_add(
-                    self.regs.sp);
                 self.regs.write16(Reg16::HL, value);
             },
 
@@ -404,9 +396,6 @@ impl<B> Cpu<B> where B: Bus {
                 let value = self.regs.read16(src).wrapping_add(1);
                 self.regs.write16(src, value);
             },
-            Op::inc16_sp => {
-                self.regs.sp = self.regs.sp.wrapping_add(1);
-            },
 
             Op::dec8_reg { src } => {
                 let carry = self.regs.f.contains(CARRY);
@@ -426,9 +415,6 @@ impl<B> Cpu<B> where B: Bus {
             Op::dec16_reg { src } => {
                 let value = self.regs.read16(src).wrapping_sub(1);
                 self.regs.write16(src, value);
-            },
-            Op::dec16_sp => {
-                self.regs.sp = self.regs.sp.wrapping_sub(1);
             },
 
             Op::cp8_reg { src } => {

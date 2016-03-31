@@ -20,7 +20,8 @@ fn inc16(src: Reg16, value: u16) {
 
 #[test]
 fn test_inc16() {
-    let regs = [Reg16::BC, Reg16::DE, Reg16::HL];
+    // INC Reg16
+    let regs = [Reg16::BC, Reg16::DE, Reg16::HL, Reg16::SP];
 
     for src in regs.iter() {
         inc16(*src, 0x0004);

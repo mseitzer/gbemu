@@ -60,14 +60,10 @@ for code in range(0, 256):
         cycles = 2
         jcycles = 3
 
-    elif lo == 1 and 0 <= hi <= 2:
+    elif lo == 1 and 0 <= hi <= 3:
         op = "ld16_imm"
-        dest = [bc, de, hl][hi]
+        dest = [bc, de, hl, sp][hi]
         dbits = 16
-        imm = imm16
-        cycles = 3
-    elif lo == 1 and hi == 3:
-        op = "ld16_sp_imm"
         imm = imm16
         cycles = 3
 
@@ -84,13 +80,10 @@ for code in range(0, 256):
         op = "st8_ind_dec"
         cycles = 2
 
-    elif lo == 3 and 0 <= hi <= 2:
+    elif lo == 3 and 0 <= hi <= 3:
         op = "inc16_reg"
-        src = [bc, de, hl][hi]
+        src = [bc, de, hl, sp][hi]
         sbits = 16
-        cycles = 2
-    elif lo == 3 and hi == 3:
-        op = "inc16_sp"
         cycles = 2
 
     elif lo == 4 and 0 <= hi <= 2:
@@ -138,13 +131,10 @@ for code in range(0, 256):
         cycles = 2
         jcycles = 3
 
-    elif lo == 9 and 0 <= hi <= 2:
+    elif lo == 9 and 0 <= hi <= 3:
         op = "add16_reg"
-        src = [bc, de, hl][hi]
+        src = [bc, de, hl, sp][hi]
         sbits = 16
-        cycles = 2
-    elif lo == 9 and hi == 3:
-        op = "add16_sp"
         cycles = 2
 
     elif lo == 0xA and 0 <= hi <= 1:
@@ -157,13 +147,10 @@ for code in range(0, 256):
         op = ["ld8_ind_inc", "ld8_ind_dec"][hi-2]
         cycles = 2
 
-    elif lo == 0xB and 0 <= hi <= 2:
+    elif lo == 0xB and 0 <= hi <= 3:
         op = "dec16_reg"
-        src = [bc, de, hl][hi]
+        src = [bc, de, hl, sp][hi]
         sbits = 16
-        cycles = 2
-    elif lo == 0xB and hi == 3:
-        op = "dec16_sp"
         cycles = 2
 
     elif lo == 0xC and 0 <= hi <= 3:

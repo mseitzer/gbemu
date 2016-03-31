@@ -74,9 +74,9 @@ fn test_opcodes() {
         (vec![0x22], Op::st8_ind_inc, None),
         (vec![0x23], Op::inc16_reg { src: HL }, None),
 
-        (vec![0x31, 0x99, 0x11], Op::ld16_sp_imm, Imm16(0x1199)),
+        (vec![0x31, 0x99, 0x11], Op::ld16_imm { dest: SP }, Imm16(0x1199)),
         (vec![0x32], Op::st8_ind_dec, None),
-        (vec![0x33], Op::inc16_sp, None),
+        (vec![0x33], Op::inc16_reg { src: SP }, None),
 
         (vec![0x40], Op::ld8_rr { dest: B, src: B }, None),
         (vec![0x41], Op::ld8_rr { dest: B, src: C }, None),

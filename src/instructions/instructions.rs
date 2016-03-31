@@ -47,8 +47,7 @@ pub enum Op {
     ld8_ind_inc,                    // A = (HL); HL++
 
     ld16_sp,                        // SP = HL
-    ld16_sp_imm,                    // SP = imm16
-    ld16_imm { dest: Reg16 },       // BC/DE/HL = imm16
+    ld16_imm { dest: Reg16 },       // BC/DE/HL/SP = imm16
     ld16_lea,                       // HL = SP+imm8
  
     st8_ind_imm,                    // (HL) = imm8
@@ -71,8 +70,7 @@ pub enum Op {
     add8_ind,                       // A += (HL)
     add8_imm,                       // A += imm8
     add8_sp_imm,                    // SP += imm8
-    add16_reg { src: Reg16 },       // HL += BC/DE/HL
-    add16_sp,                       // HL += SP
+    add16_reg { src: Reg16 },       // HL += BC/DE/HL/SP
 
     adc8_reg { src: Reg8 },         // A += src + CF
     adc8_ind,                       // A += (HL) + CF
@@ -100,13 +98,11 @@ pub enum Op {
 
     inc8_reg { src: Reg8 },         // src += 1
     inc8_ind,                       // (HL) += 1
-    inc16_reg { src: Reg16 },       // BC/DE/HL += 1
-    inc16_sp,                       // SP += 1
+    inc16_reg { src: Reg16 },       // BC/DE/HL/SP += 1
 
     dec8_reg { src: Reg8 },         // src -= 1
     dec8_ind,                       // (HL) -= 1
-    dec16_reg { src: Reg16 },       // BC/DE/HL -= 1
-    dec16_sp,                       // SP -= 1
+    dec16_reg { src: Reg16 },       // BC/DE/HL/SP -= 1
 
     cp8_reg { src: Reg8 },          // cmp A, src
     cp8_ind,                        // cmp A, (HL)

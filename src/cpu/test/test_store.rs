@@ -4,6 +4,7 @@ use instructions::{Instr, Reg8, Reg16, Immediate, Op};
 
 #[test]
 fn test_indirect_store8() {
+    // LD (HL), Reg8
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
     for src in regs.iter() {
