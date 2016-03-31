@@ -66,14 +66,17 @@ fn test_opcodes() {
         (vec![0x02], Op::st8_ind { dest: Addr::BC, src: A }, None),
         (vec![0x03], Op::inc16_reg { src: BC }, None),
 
+        (vec![0x10], Op::stop, None),
         (vec![0x11, 0x99, 0x11], Op::ld16_imm { dest: DE }, Imm16(0x1199)),
         (vec![0x12], Op::st8_ind { dest: Addr::DE, src: A }, None),
         (vec![0x13], Op::inc16_reg { src: DE }, None),
 
+        // TODO: 0x20
         (vec![0x21, 0x99, 0x11], Op::ld16_imm { dest: HL }, Imm16(0x1199)),
         (vec![0x22], Op::st8_ind { dest: Addr::HLI, src: A}, None),
         (vec![0x23], Op::inc16_reg { src: HL }, None),
 
+        // TODO: 0x30
         (vec![0x31, 0x99, 0x11], Op::ld16_imm { dest: SP }, Imm16(0x1199)),
         (vec![0x32], Op::st8_ind { dest: Addr::HLD, src: A }, None),
         (vec![0x33], Op::inc16_reg { src: SP }, None),
