@@ -10,6 +10,9 @@ use std::error::Error;
 use std::fmt;
 use std::fs::File;
 
+#[macro_use]
+mod util;
+
 mod cpu;
 mod hardware;
 mod mem_map;
