@@ -3,7 +3,7 @@ use super::super::Cpu;
 use super::{TestHardware, run_test, test_instr};
 use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
 
-fn indirect_store(src: Reg8, reg: Reg16, addr: Addr, addr_value: u16, value: u8) 
+fn indirect_store_helper(src: Reg8, reg: Reg16, addr: Addr, addr_value: u16, value: u8) 
     -> Cpu<TestHardware> {
 
     let op = Op::st8_ind { dest: addr, src: src };
@@ -27,7 +27,7 @@ fn test_indirect_store8_hl() {
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
     for src in regs.iter() {
-        let cpu = indirect_store(*src, Reg16::HL, Addr::HL, 0x0001, 0x42);
+        let cpu = indirect_store_helper(*src, Reg16::HL, Addr::HL, 0x0001, 0x42);
         match *src {
             Reg8::H => {
                 assert_eq!(cpu.bus.read(0x0001), 0x00);
@@ -50,7 +50,7 @@ fn test_indirect_store8_hl() {
 #[test]
 fn test_indirect_store8_bc() {
     // LD (BC), Reg8
-    let cpu = indirect_store(Reg8::A, Reg16::BC, Addr::BC, 0x0001, 0x42);
+    let cpu = indirect_store_helper(Reg8::A, Reg16::BC, Addr::BC, 0x0001, 0x42);
     assert_eq!(cpu.bus.read(0x0001), 0x42);
     assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
     assert_eq!(cpu.regs.read16(Reg16::BC), 0x0001);
@@ -59,7 +59,7 @@ fn test_indirect_store8_bc() {
 #[test]
 fn test_indirect_store8_de() {
     // LD (DE), Reg8
-    let cpu = indirect_store(Reg8::A, Reg16::DE, Addr::DE, 0x0001, 0x42);
+    let cpu = indirect_store_helper(Reg8::A, Reg16::DE, Addr::DE, 0x0001, 0x42);
     assert_eq!(cpu.bus.read(0x0001), 0x42);
     assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
     assert_eq!(cpu.regs.read16(Reg16::DE), 0x0001);
@@ -68,7 +68,7 @@ fn test_indirect_store8_de() {
 #[test]
 fn test_indirect_store8_hli() {
     // LD (HL+), Reg8
-    let cpu = indirect_store(Reg8::A, Reg16::HL, Addr::HLI, 0x0001, 0x42);
+    let cpu = indirect_store_helper(Reg8::A, Reg16::HL, Addr::HLI, 0x0001, 0x42);
     assert_eq!(cpu.bus.read(0x0001), 0x42);
     assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
     assert_eq!(cpu.regs.read16(Reg16::HL), 0x0002);
@@ -77,7 +77,7 @@ fn test_indirect_store8_hli() {
 #[test]
 fn test_indirect_store8_hld() {
     // LD (HL-), Reg8
-    let cpu = indirect_store(Reg8::A, Reg16::HL, Addr::HLD, 0x0001, 0x42);
+    let cpu = indirect_store_helper(Reg8::A, Reg16::HL, Addr::HLD, 0x0001, 0x42);
     assert_eq!(cpu.bus.read(0x0001), 0x42);
     assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
     assert_eq!(cpu.regs.read16(Reg16::HL), 0x0000);

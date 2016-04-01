@@ -106,7 +106,7 @@ for code in range(0, 256):
         cycles = 1
     elif lo == 4 and hi == 3:
         op = "inc8_ind"
-        cycles = 1
+        cycles = 3
 
     elif lo == 5 and 0 <= hi <= 2:
         op = "dec8_reg"

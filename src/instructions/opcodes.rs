@@ -532,10 +532,9 @@ pub const EXT_OPCODES: [Op; 256] = [
 pub fn cycles(opcode: &Op) -> u8 {
     match *opcode {
         nop | inc8_reg {..} | dec8_reg {..} | rlca | rrca | stop 
-        | rla | rra | daa | cpl | inc8_ind | scf | ccf | ld8_rr {..} 
-        | halt | add8_reg {..} | adc8_reg {..} | sub8_reg {..} | sbc8_reg {..} 
-        | and8_reg {..} | xor8_reg {..} | or8_reg {..} | cp8_reg {..} 
-        | di | ei => 1,
+        | rla | rra | daa | cpl | scf | ccf | ld8_rr {..} | halt | add8_reg {..} 
+        | adc8_reg {..} | sub8_reg {..} | sbc8_reg {..} | and8_reg {..} 
+        | xor8_reg {..} | or8_reg {..} | cp8_reg {..} | di | ei => 1,
         st8_ind { dest: Addr::BC, src: _ } | inc16_reg {..} | ld8_imm {..} 
         | add16_reg {..} | ld8_ind { dest: _, src: Addr::BC } | dec16_reg {..} 
         | st8_ind { dest: Addr::DE, src: _ } | ld8_ind { dest: _, src: Addr::DE } 
@@ -548,8 +547,8 @@ pub fn cycles(opcode: &Op) -> u8 {
         | in8_reg | or8_imm | ld16_sp | cp8_imm | rlc {..} | rrc {..} 
         | rl {..} | rr {..} | sla {..} | sra {..} | swap {..} | srl {..} 
         | bit {..} | res {..} | set {..} => 2,
-        ld16_imm {..} | dec8_ind | st8_ind_imm | out8_imm | in8_imm 
-        | ld16_lea => 3,
+        ld16_imm {..} | inc8_ind | dec8_ind | st8_ind_imm | out8_imm 
+        | in8_imm | ld16_lea => 3,
         push16 {..} | rst {..} | add8_sp_imm | st8_ind { dest: Addr::Imm, src: _ } 
         | ld8_ind { dest: _, src: Addr::Imm } | rlc_ind | rrc_ind 
         | rl_ind | rr_ind | sla_ind | sra_ind | swap_ind | srl_ind 

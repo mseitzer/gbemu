@@ -65,21 +65,29 @@ fn test_opcodes() {
         (vec![0x01, 0x99, 0x11], Op::ld16_imm { dest: BC }, Imm16(0x1199)),
         (vec![0x02], Op::st8_ind { dest: Addr::BC, src: A }, None),
         (vec![0x03], Op::inc16_reg { src: BC }, None),
+        (vec![0x04], Op::inc8_reg { src: B }, None),
+        (vec![0x0C], Op::inc8_reg { src: C }, None),
 
         (vec![0x10], Op::stop, None),
         (vec![0x11, 0x99, 0x11], Op::ld16_imm { dest: DE }, Imm16(0x1199)),
         (vec![0x12], Op::st8_ind { dest: Addr::DE, src: A }, None),
         (vec![0x13], Op::inc16_reg { src: DE }, None),
+        (vec![0x14], Op::inc8_reg { src: D }, None),
+        (vec![0x1C], Op::inc8_reg { src: E }, None),
 
         // TODO: 0x20
         (vec![0x21, 0x99, 0x11], Op::ld16_imm { dest: HL }, Imm16(0x1199)),
         (vec![0x22], Op::st8_ind { dest: Addr::HLI, src: A}, None),
         (vec![0x23], Op::inc16_reg { src: HL }, None),
+        (vec![0x24], Op::inc8_reg { src: H }, None),
+        (vec![0x2C], Op::inc8_reg { src: L }, None),
 
         // TODO: 0x30
         (vec![0x31, 0x99, 0x11], Op::ld16_imm { dest: SP }, Imm16(0x1199)),
         (vec![0x32], Op::st8_ind { dest: Addr::HLD, src: A }, None),
         (vec![0x33], Op::inc16_reg { src: SP }, None),
+        (vec![0x34], Op::inc8_ind, None),
+        (vec![0x3C], Op::inc8_reg { src: A }, None),
 
         (vec![0x40], Op::ld8_rr { dest: B, src: B }, None),
         (vec![0x41], Op::ld8_rr { dest: B, src: C }, None),
