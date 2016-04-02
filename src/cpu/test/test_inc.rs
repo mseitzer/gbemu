@@ -26,7 +26,7 @@ fn test_inc16() {
 
     for src in regs.iter() {
         inc16_helper(*src, 0x0004);
-        inc16_helper(*src, 0xffff); // Overflow
+        inc16_helper(*src, 0xffff); // Test overflow
     }
 }
 
@@ -64,7 +64,7 @@ fn test_inc8() {
     for src in regs.iter() {
         inc8_helper(*src, 0x42);
         inc8_helper(*src, 0x0f); // Test hcarry
-        inc8_helper(*src, 0xff); // Test Overflow
+        inc8_helper(*src, 0xff); // Test overflow
     }
 }
 
@@ -88,5 +88,5 @@ fn test_inc8_ind() {
     // INC (HL)
     inc8_ind_helper(Reg16::HL, 0x42);
     inc8_ind_helper(Reg16::HL, 0x0f); // Test hcarry
-    inc8_ind_helper(Reg16::HL, 0xff); // Test Overflow
+    inc8_ind_helper(Reg16::HL, 0xff); // Test overflow
 }
