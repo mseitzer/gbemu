@@ -26,7 +26,7 @@ impl<B> super::Cpu<B> where B: Bus {
         let old_carry = self.regs.f.contains(CARRY);
         self.regs.f = CARRY.test(get_bit!(value, 7) == 1);
         let res = value << 1 | (old_carry as u8);
-        self.regs.f = self.regs.f | ZERO.test(res == 0);
+        self.regs.f.force(ZERO, res == 0);
         res
     }
 
@@ -35,7 +35,7 @@ impl<B> super::Cpu<B> where B: Bus {
         // Bit 7 is shifted to carry and bit 0
         self.regs.f = CARRY.test(get_bit!(value, 7) == 1);
         let res = value << 1 | (self.regs.f.contains(CARRY) as u8);
-        self.regs.f = self.regs.f | ZERO.test(res == 0);
+        self.regs.f.force(ZERO, res == 0);
         res
     }
 
@@ -45,7 +45,7 @@ impl<B> super::Cpu<B> where B: Bus {
         let old_carry = self.regs.f.contains(CARRY);
         self.regs.f = CARRY.test(get_bit!(value, 0) == 1);
         let res = (old_carry as u8) << 7 | value >> 1;
-        self.regs.f = self.regs.f | ZERO.test(res == 0);
+        self.regs.f.force(ZERO, res == 0);
         res
     }
 
@@ -54,7 +54,7 @@ impl<B> super::Cpu<B> where B: Bus {
         // Bit 0 is shifted to carry and bit 7
         self.regs.f = CARRY.test(get_bit!(value, 0) == 1);
         let res = (self.regs.f.contains(CARRY) as u8) << 7 | value >> 1;
-        self.regs.f = self.regs.f | ZERO.test(res == 0);
+        self.regs.f.force(ZERO, res == 0);
         res
     }
 
@@ -63,7 +63,7 @@ impl<B> super::Cpu<B> where B: Bus {
         // Bit 7 is shifted to carry
         self.regs.f = CARRY.test(get_bit!(value, 7) == 1);
         let res = value << 1;
-        self.regs.f = self.regs.f | ZERO.test(res == 0);
+        self.regs.f.force(ZERO, res == 0);
         res
     }
 
@@ -72,7 +72,7 @@ impl<B> super::Cpu<B> where B: Bus {
         // Bit 0 is shifted to carry, bit 7 stays the same
         self.regs.f = CARRY.test(get_bit!(value, 0) == 1);
         let res = value >> 1;
-        self.regs.f = self.regs.f | ZERO.test(res == 0);
+        self.regs.f.force(ZERO, res == 0);
         res
     }
 
@@ -81,7 +81,7 @@ impl<B> super::Cpu<B> where B: Bus {
         // Bit 0 is shifted to carry, bit 7 is reset
         self.regs.f = CARRY.test(get_bit!(value, 0) == 1);
         let res = reset_bit!(value >> 1, 7);
-        self.regs.f = self.regs.f | ZERO.test(res == 0);
+        self.regs.f.force(ZERO, res == 0);
         res
     }
 

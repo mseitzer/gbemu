@@ -769,20 +769,20 @@ impl<B> Cpu<B> where B: Bus {
         let res_3 = get_bit!(res, 3);
 
         self.regs.f = ZERO.test(res == 0) |
-                     CARRY.test(((a_7 | bc_7) == 1 && res_7 == 0) 
-                        || (a_7 & bc_7) == 1 && res_7 == 1) |
-                     HCARRY.test(((a_3 | bc_3) == 1 && res_3 == 0) 
-                        || (a_3 & bc_3) == 1 && res_3 == 1);
+                      CARRY.test(((a_7 | bc_7) == 1 && res_7 == 0) 
+                         || ((a_7 & bc_7) == 1 && res_7 == 1)) |
+                      HCARRY.test(((a_3 | bc_3) == 1 && res_3 == 0) 
+                         || ((a_3 & bc_3) == 1 && res_3 == 1));
         return res;
     }
 
     fn alu_sub_bytes(&mut self, a: u8, b: u8, with_carry: bool) -> u8 {
         let res = self.alu_add_bytes(a, (!b).wrapping_add(1), with_carry);
 
-        self.regs.f = self.regs.f |
-                     SUB |
-                     CARRY.test(!self.regs.f.contains(CARRY)) |
-                     HCARRY.test(!self.regs.f.contains(HCARRY));
+        self.regs.f = ZERO.test(self.regs.f.contains(ZERO)) |
+                      SUB |
+                      CARRY.test(!self.regs.f.contains(CARRY)) |
+                      HCARRY.test(!self.regs.f.contains(HCARRY));
         return res;
     }
 
@@ -798,10 +798,10 @@ impl<B> Cpu<B> where B: Bus {
         let res_11 = get_bit!(res, 11);
 
         self.regs.f = self.regs.f |
-                     CARRY.test(((a_15 | bc_15) == 1 && res_15 == 0) 
-                        || (a_15 & bc_15) == 1 && res_15 == 1) |
-                     HCARRY.test(((a_11 | bc_11) == 1 && res_11 == 0) 
-                        || (a_11 & bc_11) == 1 && res_11 == 1);
+                      CARRY.test(((a_15 | bc_15) == 1 && res_15 == 0) 
+                         || (a_15 & bc_15) == 1 && res_15 == 1) |
+                      HCARRY.test(((a_11 | bc_11) == 1 && res_11 == 0) 
+                         || (a_11 & bc_11) == 1 && res_11 == 1);
         self.regs.f.remove(SUB);
         return res;
     }
@@ -809,7 +809,7 @@ impl<B> Cpu<B> where B: Bus {
     fn alu_and_bytes(&mut self, a: u8, b: u8) -> u8 {
         let res = a & b;
         self.regs.f = ZERO.test(res == 0) |
-                     HCARRY.test(true);
+                      HCARRY.test(true);
         return res;
     }
 
