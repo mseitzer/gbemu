@@ -758,7 +758,8 @@ impl<B> Cpu<B> where B: Bus {
     }
 
     fn alu_add_bytes(&mut self, a: u8, b: u8, with_carry: bool) -> u8 {
-        let bc = b.wrapping_add(with_carry as u8);
+        let carry = if self.regs.f.contains(CARRY) {with_carry as u8} else {0};
+        let bc = b.wrapping_add(carry);
         let res = a.wrapping_add(bc);
 
         let a_7 = get_bit!(a, 7);
