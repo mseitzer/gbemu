@@ -17,7 +17,6 @@ fn indirect_store_helper(src: Reg8, reg: Reg16, addr: Addr, addr_value: u16, val
     );
 
     assert_eq!(cpu.last_cycles, 2);
-    
     cpu
 }
 
@@ -81,4 +80,21 @@ fn test_indirect_store8_hld() {
     assert_eq!(cpu.bus.read(0x0001), 0x42);
     assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
     assert_eq!(cpu.regs.read16(Reg16::HL), 0x0000);
+}
+
+#[test]
+fn test_indirect_immediate_store8() {
+    // LD (HL), Imm8
+    let op = Op::st8_ind_imm;
+    let cpu = test_instr(
+        Instr { op: op, imm: Immediate::Imm8(0x66) },
+        &[0x00, 0xff],
+        |cpu| {
+            cpu.regs.write16(Reg16::HL, 0x0001);
+        }
+    );
+
+    assert_eq!(cpu.last_cycles, 3);
+    assert_eq!(cpu.bus.read(0x0001), 0x66);
+    assert_eq!(cpu.regs.read16(Reg16::HL), 0x0001);
 }

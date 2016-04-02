@@ -2,7 +2,27 @@ use super::{run_test, test_instr};
 use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
 
 #[test]
-fn test_load8() {
+fn test_immediate_load8() {
+    // LD Reg8, imm8
+    let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
+
+    for dest in regs.iter() {
+        let op = Op::ld8_imm { dest: *dest };
+        let cpu = test_instr(
+            Instr { op: op, imm: Immediate::Imm8(0x33) },
+            &[0x00],
+            |cpu| {
+                cpu.regs.write8(*dest, 0x00);
+            }
+        );
+
+        assert_eq!(cpu.last_cycles, 2);
+        assert_eq!(cpu.regs.read8(*dest), 0x33);
+    }
+}
+
+#[test]
+fn test_register_load8() {
     // LD Reg8, Reg8
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
