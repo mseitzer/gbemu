@@ -79,6 +79,7 @@ fn test_opcodes() {
         (vec![0x0C], Op::inc8_reg { src: C }, None),
         (vec![0x0D], Op::dec8_reg { src: C }, None),
         (vec![0x0E, 0xff], Op::ld8_imm { dest: C }, Imm8(0xff)),
+        (vec![0x0F], Op::rrca, None),
 
         (vec![0x10], Op::stop, None),
         (vec![0x11, 0x99, 0x11], Op::ld16_imm { dest: DE }, Imm16(0x1199)),
@@ -95,6 +96,7 @@ fn test_opcodes() {
         (vec![0x1C], Op::inc8_reg { src: E }, None),
         (vec![0x1D], Op::dec8_reg { src: E }, None),
         (vec![0x1E, 0xff], Op::ld8_imm { dest: E }, Imm8(0xff)),
+        (vec![0x1F], Op::rra, None),
 
         // TODO: 0x20
         (vec![0x21, 0x99, 0x11], Op::ld16_imm { dest: HL }, Imm16(0x1199)),

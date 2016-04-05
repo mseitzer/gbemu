@@ -57,3 +57,56 @@ fn test_rotate_left() {
     rotate_left_helper(0xCC, true);
     rotate_left_helper(0xCC, false);
 }
+
+fn rotate_right_carry_helper(value: u8) {
+    let op = Op::rrca;
+    let cpu = test_instr(
+        Instr { op: op, imm: Immediate::None },
+        &[0x00],
+        |cpu| {
+            cpu.regs.f = Flags::all();
+            cpu.regs.write8(Reg8::A, value);
+        }
+    );
+   
+    assert_eq!(cpu.last_cycles, 1);
+    assert_eq!(cpu.regs.read8(Reg8::A), value.rotate_right(1));
+    assert!(!cpu.regs.f.contains(ZERO));
+    assert!(!cpu.regs.f.contains(SUB));
+    assert!(!cpu.regs.f.contains(HCARRY));
+    assert_eq!(cpu.regs.f.contains(CARRY), value & 0x01 != 0);
+}
+
+#[test]
+fn test_rotate_right_carry() {
+    rotate_right_carry_helper(0x01);
+    rotate_right_carry_helper(0xFE);
+}
+
+fn rotate_right_helper(value: u8, carry: bool) {
+    let op = Op::rra;
+    let cpu = test_instr(
+        Instr { op: op, imm: Immediate::None },
+        &[0x00],
+        |cpu| {
+            cpu.regs.f = Flags::all();
+            cpu.regs.f.force(CARRY, carry);
+            cpu.regs.write8(Reg8::A, value);
+        }
+    );
+   
+    assert_eq!(cpu.last_cycles, 1);
+    assert_eq!(cpu.regs.read8(Reg8::A), (value >> 1) | ((carry as u8) << 7));
+    assert!(!cpu.regs.f.contains(ZERO));
+    assert!(!cpu.regs.f.contains(SUB));
+    assert!(!cpu.regs.f.contains(HCARRY));
+    assert_eq!(cpu.regs.f.contains(CARRY), value & 0x01 != 0);
+}
+
+#[test]
+fn test_rotate_right() {
+    rotate_right_helper(0x01, true);
+    rotate_right_helper(0x01, false);
+    rotate_right_helper(0xFE, true);
+    rotate_right_helper(0xFE, false);
+}
