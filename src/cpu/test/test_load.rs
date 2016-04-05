@@ -1,4 +1,6 @@
-use super::{run_test, test_instr};
+use hardware::Bus;
+use super::super::Cpu;
+use super::{TestHardware, run_test, test_instr};
 use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
 
 #[test]
@@ -46,7 +48,7 @@ fn test_register_load8() {
 }
 
 #[test]
-fn test_indirect_load8() {
+fn test_indirect_load8_hl() {
     // LD Reg8, (HL)
     let regs = [Reg8::A, Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L];
 
@@ -69,6 +71,56 @@ fn test_indirect_load8() {
             _       => assert_eq!(cpu.regs.read16(Reg16::HL), 0x0001)
         };
     }
+}
+
+fn indirect_load_helper(dest: Reg8, addr: Addr, src: Reg16) -> Cpu<TestHardware> {
+    let op = Op::ld8_ind { dest: dest, src: addr};
+    let cpu = test_instr(
+        Instr { op: op, imm: Immediate::None },
+        &[0x00, 0x42],
+        |cpu| {
+            cpu.regs.write8(dest, 0x00);
+            cpu.regs.write16(src, 0x0001);
+        }
+    );
+    assert_eq!(cpu.last_cycles, 2);
+    cpu
+}
+
+#[test]
+fn test_indirect_load8_bc() {
+    // LD A, (BC)
+    let cpu = indirect_load_helper(Reg8::A, Addr::BC, Reg16::BC);
+    assert_eq!(cpu.bus.read(0x0001), 0x42);
+    assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
+    assert_eq!(cpu.regs.read16(Reg16::BC), 0x0001);
+}
+
+#[test]
+fn test_indirect_load8_de() {
+    // LD A, (DE)
+    let cpu = indirect_load_helper(Reg8::A, Addr::DE, Reg16::DE);
+    assert_eq!(cpu.bus.read(0x0001), 0x42);
+    assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
+    assert_eq!(cpu.regs.read16(Reg16::DE), 0x0001);
+}
+
+#[test]
+fn test_indirect_load8_hli() {
+    // LD A, (HL+)
+    let cpu = indirect_load_helper(Reg8::A, Addr::HLI, Reg16::HL);
+    assert_eq!(cpu.bus.read(0x0001), 0x42);
+    assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
+    assert_eq!(cpu.regs.read16(Reg16::HL), 0x0002);
+}
+
+#[test]
+fn test_indirect_load8_hld() {
+    // LD A, (HL-)
+    let cpu = indirect_load_helper(Reg8::A, Addr::HLD, Reg16::HL);
+    assert_eq!(cpu.bus.read(0x0001), 0x42);
+    assert_eq!(cpu.regs.read8(Reg8::A), 0x42);
+    assert_eq!(cpu.regs.read16(Reg16::HL), 0x0000);
 }
 
 #[test]

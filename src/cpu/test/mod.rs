@@ -74,6 +74,7 @@ fn test_opcodes() {
         (vec![0x07], Op::rlca, None),
         (vec![0x08, 0xaa, 0xbb], Op::st16_sp, Imm16(0xbbaa)),
         (vec![0x09], Op::add16_reg { src: BC }, None),
+        (vec![0x0A], Op::ld8_ind { dest: A, src: Addr::BC }, None),
         (vec![0x0B], Op::dec16_reg { src: BC }, None),
         (vec![0x0C], Op::inc8_reg { src: C }, None),
         (vec![0x0D], Op::dec8_reg { src: C }, None),
@@ -89,6 +90,7 @@ fn test_opcodes() {
         (vec![0x17], Op::rla, None),
         // TODO: 0x18
         (vec![0x19], Op::add16_reg { src: DE }, None),
+        (vec![0x1A], Op::ld8_ind { dest: A, src: Addr::DE }, None),
         (vec![0x1B], Op::dec16_reg { src: DE }, None),
         (vec![0x1C], Op::inc8_reg { src: E }, None),
         (vec![0x1D], Op::dec8_reg { src: E }, None),
@@ -104,6 +106,7 @@ fn test_opcodes() {
         (vec![0x27], Op::daa, None),
         // TODO: 0x28
         (vec![0x29], Op::add16_reg { src: HL }, None),
+        (vec![0x2A], Op::ld8_ind { dest: A, src: Addr::HLI }, None),
         (vec![0x2B], Op::dec16_reg { src: HL }, None),
         (vec![0x2C], Op::inc8_reg { src: L }, None),
         (vec![0x2D], Op::dec8_reg { src: L }, None),
@@ -119,6 +122,7 @@ fn test_opcodes() {
         (vec![0x37], Op::scf, None),
         // TODO: 0x38
         (vec![0x39], Op::add16_reg { src: SP }, None),
+        (vec![0x3A], Op::ld8_ind { dest: A, src: Addr::HLD }, None),
         (vec![0x3B], Op::dec16_reg { src: SP }, None),
         (vec![0x3C], Op::inc8_reg { src: A }, None),
         (vec![0x3D], Op::dec8_reg { src: A }, None),
