@@ -214,12 +214,13 @@ impl<B> Cpu<B> where B: Bus {
             Op::add8_sp_imm => {
                 let a = self.regs.sp;
                 let b = instr.imm.imm8() as u16;
-                self.regs.sp = self.alu_add_words(a, b, false);
+                self.regs.sp = self.alu_add_words(a, b);
                 self.regs.f.remove(ZERO);
             },
             Op::add16_reg { src } => {
-                let value = self.regs.read16(Reg16::HL).wrapping_add(
-                    self.regs.read16(src));
+                let a = self.regs.read16(Reg16::HL);
+                let b = self.regs.read16(src);
+                let value = self.alu_add_words(a, b);
                 self.regs.write16(Reg16::HL, value);
             },
 
@@ -787,23 +788,21 @@ impl<B> Cpu<B> where B: Bus {
         return res;
     }
 
-    fn alu_add_words(&mut self, a: u16, b: u16, with_carry: bool) -> u16 {
-        let bc = b.wrapping_add(with_carry as u16);
-        let res = a.wrapping_add(bc);
+    fn alu_add_words(&mut self, a: u16, b: u16) -> u16 {
+        let res = a.wrapping_add(b);
 
         let a_15 = get_bit!(a, 15);
-        let bc_15 = get_bit!(bc, 15);
+        let b_15 = get_bit!(b, 15);
         let res_15 = get_bit!(res, 15);
         let a_11 = get_bit!(a, 11);
-        let bc_11 = get_bit!(bc, 11);
+        let b_11 = get_bit!(b, 11);
         let res_11 = get_bit!(res, 11);
 
-        self.regs.f = self.regs.f |
-                      CARRY.test(((a_15 | bc_15) == 1 && res_15 == 0) 
-                         || (a_15 & bc_15) == 1 && res_15 == 1) |
-                      HCARRY.test(((a_11 | bc_11) == 1 && res_11 == 0) 
-                         || (a_11 & bc_11) == 1 && res_11 == 1);
-        self.regs.f.remove(SUB);
+        self.regs.f = ZERO.test(self.regs.f.contains(ZERO)) |
+                      CARRY.test(((a_15 | b_15) == 1 && res_15 == 0) 
+                         || (a_15 & b_15) == 1 && res_15 == 1) |
+                      HCARRY.test(((a_11 | b_11) == 1 && res_11 == 0) 
+                         || (a_11 & b_11) == 1 && res_11 == 1);
         return res;
     }
 
