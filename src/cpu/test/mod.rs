@@ -7,6 +7,7 @@ use instructions::{Instr, Op, Immediate, Reg8, Reg16, Addr};
 mod test_misc;
 mod test_load;
 mod test_store;
+mod test_add;
 mod test_inc;
 mod test_dec;
 mod test_shift_rot;
@@ -71,6 +72,8 @@ fn test_opcodes() {
         (vec![0x05], Op::dec8_reg { src: B }, None),
         (vec![0x06, 0xff], Op::ld8_imm { dest: B }, Imm8(0xff)),
         (vec![0x07], Op::rlca, None),
+        (vec![0x08, 0xaa, 0xbb], Op::st16_sp, Imm16(0xbbaa)),
+        (vec![0x09], Op::add16_reg { src: BC }, None),
         (vec![0x0B], Op::dec16_reg { src: BC }, None),
         (vec![0x0C], Op::inc8_reg { src: C }, None),
         (vec![0x0D], Op::dec8_reg { src: C }, None),
@@ -84,6 +87,8 @@ fn test_opcodes() {
         (vec![0x15], Op::dec8_reg { src: D }, None),
         (vec![0x16, 0xff], Op::ld8_imm { dest: D }, Imm8(0xff)),
         (vec![0x17], Op::rla, None),
+        // TODO: 0x18
+        (vec![0x19], Op::add16_reg { src: DE }, None),
         (vec![0x1B], Op::dec16_reg { src: DE }, None),
         (vec![0x1C], Op::inc8_reg { src: E }, None),
         (vec![0x1D], Op::dec8_reg { src: E }, None),
@@ -96,6 +101,9 @@ fn test_opcodes() {
         (vec![0x24], Op::inc8_reg { src: H }, None),
         (vec![0x25], Op::dec8_reg { src: H }, None),
         (vec![0x26, 0xff], Op::ld8_imm { dest: H }, Imm8(0xff)),
+        (vec![0x27], Op::daa, None),
+        // TODO: 0x28
+        (vec![0x29], Op::add16_reg { src: HL }, None),
         (vec![0x2B], Op::dec16_reg { src: HL }, None),
         (vec![0x2C], Op::inc8_reg { src: L }, None),
         (vec![0x2D], Op::dec8_reg { src: L }, None),
@@ -108,6 +116,9 @@ fn test_opcodes() {
         (vec![0x34], Op::inc8_ind, None),
         (vec![0x35], Op::dec8_ind, None),
         (vec![0x36, 0xdd], Op::st8_ind_imm, Imm8(0xdd)),
+        (vec![0x37], Op::scf, None),
+        // TODO: 0x38
+        (vec![0x39], Op::add16_reg { src: SP }, None),
         (vec![0x3B], Op::dec16_reg { src: SP }, None),
         (vec![0x3C], Op::inc8_reg { src: A }, None),
         (vec![0x3D], Op::dec8_reg { src: A }, None),

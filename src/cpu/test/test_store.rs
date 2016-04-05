@@ -98,3 +98,19 @@ fn test_indirect_immediate_store8() {
     assert_eq!(cpu.bus.read(0x0001), 0x66);
     assert_eq!(cpu.regs.read16(Reg16::HL), 0x0001);
 }
+
+#[test]
+fn test_sp_store() {
+    // LD (Imm16), SP
+    let cpu = test_instr(
+        Instr { op: Op::st16_sp, imm: Immediate::Imm16(0x0001) },
+        &[0x00, 0xff, 0xaa],
+        |cpu| {
+            cpu.regs.write16(Reg16::SP, 0xbbdd);
+        }
+    );
+    assert_eq!(cpu.last_cycles, 5);
+    assert_eq!(cpu.bus.read(0x0001), 0xdd);
+    assert_eq!(cpu.bus.read(0x0002), 0xbb);
+    assert_eq!(cpu.regs.read16(Reg16::SP), 0xbbdd);
+}
