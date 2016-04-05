@@ -9,6 +9,7 @@ mod test_load;
 mod test_store;
 mod test_inc;
 mod test_dec;
+mod test_shift_rot;
 
 struct TestHardware {
     memory: Vec<u8>
@@ -69,6 +70,7 @@ fn test_opcodes() {
         (vec![0x04], Op::inc8_reg { src: B }, None),
         (vec![0x05], Op::dec8_reg { src: B }, None),
         (vec![0x06, 0xff], Op::ld8_imm { dest: B }, Imm8(0xff)),
+        (vec![0x07], Op::rlca, None),
         (vec![0x0B], Op::dec16_reg { src: BC }, None),
         (vec![0x0C], Op::inc8_reg { src: C }, None),
         (vec![0x0D], Op::dec8_reg { src: C }, None),
@@ -81,6 +83,7 @@ fn test_opcodes() {
         (vec![0x14], Op::inc8_reg { src: D }, None),
         (vec![0x15], Op::dec8_reg { src: D }, None),
         (vec![0x16, 0xff], Op::ld8_imm { dest: D }, Imm8(0xff)),
+        (vec![0x17], Op::rla, None),
         (vec![0x1B], Op::dec16_reg { src: DE }, None),
         (vec![0x1C], Op::inc8_reg { src: E }, None),
         (vec![0x1D], Op::dec8_reg { src: E }, None),
