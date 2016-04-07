@@ -23,7 +23,7 @@ pub struct Cpu<B: Bus> {
     total_cycles: u64,
     last_cycles: u8, // Cycles of last instruction
 
-    bus: B,
+    pub bus: B,
 }
 
 impl<B> Cpu<B> where B: Bus {

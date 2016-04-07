@@ -1,5 +1,6 @@
 use cpu;
 use hardware;
+use gpu;
 use instructions::Instr;
 use cpu::debug::DebugInfo;
 
@@ -20,6 +21,24 @@ fn print_help() {
 
 fn print_instr(addr: u16, instr: &Instr) {
     println!("{:#06x}: {}", addr, instr);
+}
+
+pub fn print_framebuffer(framebuffer: &gpu::Framebuffer) {
+    for i in 0..144 {
+        for j in 0..160 {
+            let color = framebuffer[(i*160+j)*3];
+            let ch = match color {
+                0x00 => '■',
+                0x60 => '▩',
+                0xc0 => '▥',
+                0xFF => ' ',
+                _    => ' ',
+            };
+            print!("{}", ch);
+        }
+        print!("\n");
+    }
+    print!("\n");
 }
 
 pub fn start(bios: Box<[u8]>, rom: Box<[u8]>) {
@@ -138,6 +157,9 @@ pub fn start(bios: Box<[u8]>, rom: Box<[u8]>) {
                         _ => println!("Unsupported auto item {}", item)
                     }
                 }
+            } else if input.starts_with("screen") {
+                let framebuffer = cpu.bus.framebuffer();
+                print_framebuffer(framebuffer);
             } else {
                 println!("Unknown command '{}'. \
                          Try help for an overview of available commands.", 

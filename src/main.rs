@@ -39,6 +39,10 @@ impl Gameboy {
     fn start(&mut self) {
         self.cpu.run();
     }
+
+    pub fn framebuffer(&self) -> &gpu::Framebuffer {
+        self.cpu.bus.framebuffer()
+    }
 }
 
 

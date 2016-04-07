@@ -46,7 +46,7 @@ impl Hardware {
         use mem_map::Addr::*;
 
         match mem_map::map_address(addr) {
-            rom_bank0(a) => {
+            ROMBank0(a) => {
                 if self.bios_mapped && a < 256 {
                     self.bios[a as usize]
                 } else {
@@ -54,19 +54,21 @@ impl Hardware {
                 }
             }
 
-            rom_bank1(a) => {
+            ROMBank1(a) => {
                 assert!(self.rom_bank_selector >= 1);
                 self.cart_rom[(16384 * self.rom_bank_selector as u16 + a) as usize]
             }
             
-            vram(a) => self.memory.read_vram(a),
-            eram(a) => self.memory.read_eram(a),
-            ram(a) => self.memory.read_ram(a),
-            zram(a) => self.memory.read_zram(a),
-            sprites(a) => self.memory.read_sprites(a),
-            zero => 0x00,
+            TileData(a) => self.gpu.read_tile_data(a),
+            TileMap1(a) => self.gpu.read_tile_map1(a),
+            TileMap2(a) => self.gpu.read_tile_map2(a),
+            ERAM(a) => self.memory.read_eram(a),
+            RAM(a) => self.memory.read_ram(a),
+            ZRAM(a) => self.memory.read_zram(a),
+            Sprites(a) => self.memory.read_sprites(a),
+            Zero => 0x00,
 
-            io(a) => {
+            IO(a) => {
                 // TODO: IO
                 match a {
                     // Timer
@@ -76,9 +78,13 @@ impl Hardware {
                     0x07 => self.timer.read_control_reg(),
 
                     // GPU
+                    0x40 => self.gpu.read_lcdc_reg(),
                     0x41 => self.gpu.read_stat_reg(),
-
+                    0x42 => self.gpu.read_scroll_y_reg(),
+                    0x43 => self.gpu.read_scroll_x_reg(),
                     0x44 => self.gpu.read_line_reg(),
+                    0x45 => self.gpu.read_line_match_reg(),
+                    0x47 => self.gpu.read_bg_palette_reg(),
 
                     // Interrupts
                     0x0f => self.int_controller.read_pending_reg(),
@@ -94,14 +100,16 @@ impl Hardware {
         use mem_map::Addr::*;
 
         match mem_map::map_address(addr) {
-            vram(a) => self.memory.write_vram(a, value),
-            eram(a) => self.memory.write_eram(a, value),
-            ram(a) => self.memory.write_ram(a, value),
-            sprites(a) => self.memory.write_sprites(a, value),
-            zram(a) => self.memory.write_zram(a, value),
-            zero => {},
+            TileData(a) => self.gpu.write_tile_data(a, value),
+            TileMap1(a) => self.gpu.write_tile_map1(a, value),
+            TileMap2(a) => self.gpu.write_tile_map2(a, value),
+            ERAM(a) => self.memory.write_eram(a, value),
+            RAM(a) => self.memory.write_ram(a, value),
+            Sprites(a) => self.memory.write_sprites(a, value),
+            ZRAM(a) => self.memory.write_zram(a, value),
+            Zero => {},
 
-            io(a) => {
+            IO(a) => {
                 // TODO: IO
                 match a {
                     // Timer
@@ -111,12 +119,16 @@ impl Hardware {
                     0x07 => self.timer.write_control_reg(value),
 
                     // GPU
+                    0x40 => self.gpu.write_lcdc_reg(value),
                     0x41 => self.gpu.write_stat_reg(value),
-
+                    0x42 => self.gpu.write_scroll_y_reg(value),
+                    0x43 => self.gpu.write_scroll_x_reg(value),
                     0x44 => {
                         // Unclear if this is allowed or not
                         panic!("Attempting to write to line reg")
                     }
+                    0x45 => self.gpu.write_line_match_reg(value),
+                    0x47 => self.gpu.write_bg_palette_reg(value),
 
                     // Unmap bios
                     0x50 if value != 0 => self.bios_mapped = false,
@@ -132,6 +144,10 @@ impl Hardware {
             _ => panic!("Write to non-writeable memory region detected! ({:#06x})",
                 addr)
         }
+    }
+
+    pub fn framebuffer(&self) -> &gpu::Framebuffer {
+        self.gpu.get_framebuffer()
     }
 }
 
