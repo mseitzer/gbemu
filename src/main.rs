@@ -12,7 +12,7 @@ use std::fs::File;
 
 #[macro_use]
 mod util;
-
+mod frontend;
 mod cpu;
 mod hardware;
 mod mem_map;
@@ -22,8 +22,9 @@ mod timer;
 mod int_controller;
 mod instructions;
 mod debug;
+mod events;
 
-struct Gameboy {
+pub struct Gameboy {
     cpu: cpu::Cpu<hardware::Hardware>
 }
 
@@ -36,8 +37,8 @@ impl Gameboy {
         }
     }
 
-    fn start(&mut self) {
-        self.cpu.run();
+    fn simulate(&mut self) -> Option<events::Events> {
+        self.cpu.step()
     }
 
     pub fn framebuffer(&self) -> &gpu::Framebuffer {
@@ -76,7 +77,8 @@ fn main() {
         debug::start(bios_buf, rom_buf);
     } else {
         let mut gb = Gameboy::new(bios_buf, rom_buf);
-        gb.start();
+        let mut frontend = frontend::Frontend::new();
+        frontend.run(&mut gb);
     }
 }
 

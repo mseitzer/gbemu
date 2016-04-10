@@ -3,6 +3,7 @@ use std::fmt;
 use hardware::{self, Bus};
 use int_controller::Interrupt;
 use mem_map;
+use events;
 use instructions;
 use instructions::{Instr, Immediate, Op, Condition, Addr, Reg8, Reg16};
 
@@ -41,26 +42,35 @@ impl<B> Cpu<B> where B: Bus {
         }
     }
 
-    pub fn run(&mut self) {
-        loop {
-            let instr = self.fetch_instr();
+    pub fn step(&mut self) -> Option<events::Events> {
+        let instr = self.fetch_instr();
 
-            //println!("Current instruction: {}\n", instr);
+        self.execute_instr(instr);
+        
+        let mut events = self.handle_updates();
 
-            self.execute_instr(instr);
-            
-            self.handle_updates();
-            self.handle_interrupts();
-            self.handle_updates();
+        self.handle_interrupts();
+        
+        let mut events2 = self.handle_updates();
+
+        match events {
+            Some(e1) => if let Some(e2) = events {
+                Some(e1 | e2)
+            } else {
+                Some(e1)
+            },
+            None => events2
         }
     }
 
-    fn handle_updates(&mut self) {
+    fn handle_updates(&mut self) -> Option<events::Events> {
+        let mut events = None;
         self.total_cycles += self.last_cycles as u64;
         if self.last_cycles != 0 {
-            self.bus.update(self.last_cycles);
+            events = self.bus.update(self.last_cycles);
         }
         self.last_cycles = 0;
+        events
     }
 
     fn handle_interrupts(&mut self) {

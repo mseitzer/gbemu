@@ -3,13 +3,14 @@ use memory;
 use timer;
 use gpu;
 use int_controller::{self, Interrupt};
+use events;
 
 pub trait Bus {
     fn read(&self, u16) -> u8;
     fn write(&mut self, u16, u8);
     fn has_irq(&self) -> bool;
     fn ack_irq(&mut self) -> Option<Interrupt>;
-    fn update(&mut self, u8);
+    fn update(&mut self, u8) -> Option<events::Events>;
 }
 
 pub struct Hardware {
@@ -168,9 +169,9 @@ impl Bus for Hardware {
         self.int_controller.ack_irq()
     }
 
-    fn update(&mut self, cycles: u8) {
+    fn update(&mut self, cycles: u8) -> Option<events::Events> {
         self.timer.tick(cycles, &mut self.int_controller);
 
-        self.gpu.step(cycles, &mut self.int_controller);
+        self.gpu.step(cycles, &mut self.int_controller)
     }
 }

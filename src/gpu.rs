@@ -1,9 +1,10 @@
 use super::int_controller::{Interrupt, IntController};
+use events;
 
+pub const SCREEN_WIDTH:     usize = 160;
+pub const SCREEN_HEIGHT:    usize = 144;
 const BG_WIDTH:             usize = 256;
 const BG_HEIGHT:            usize = 256;
-const SCREEN_WIDTH:         usize = 160;
-const SCREEN_HEIGHT:        usize = 144;
 const TILES_IN_SCREEN:      usize = 32;
 const TILE_SIZE:            usize = 8;
 const TILE_COUNT:           usize = 384;
@@ -171,11 +172,13 @@ impl Gpu {
         }
     }
 
-    pub fn step(&mut self, cycles: u8, int_controller: &mut IntController) {
+    pub fn step(&mut self, cycles: u8, int_controller: &mut IntController) 
+        -> Option<events::Events> {
         use self::GpuMode::*;
 
         self.clock += cycles as u32;
 
+        let mut events = None;
         let mut next_line = self.line;
 
         match self.mode {
@@ -186,11 +189,12 @@ impl Gpu {
                 if next_line == 144 {
                     self.update_mode(VBlank, int_controller);
                     
-                    // TODO: render framebuffer here
+                    
                     if self.lcdc_reg.contains(DISPLAY_ENABLED) {
+                        events = Some(events::RENDER);
                         //let palette = Palette { data: 0xfc };
                         //Gpu::print_tile(self.tiles[1], palette);
-                        self.print_framebuffer();
+                        //self.print_framebuffer();
                     }
                 } else {
                     self.update_mode(ScanlineOAM, int_controller);
@@ -223,6 +227,8 @@ impl Gpu {
                 int_controller.set_int_pending(Interrupt::LCDCStatus);
             }
         }
+
+        return events;
     }
 
     fn update_mode(&mut self, mode: GpuMode, int_controller: &mut IntController) {
