@@ -173,12 +173,12 @@ impl Gpu {
     }
 
     pub fn step(&mut self, cycles: u8, int_controller: &mut IntController) 
-        -> Option<events::Events> {
+        -> events::Events {
         use self::GpuMode::*;
 
         self.clock += cycles as u32;
 
-        let mut events = None;
+        let mut events = events::Events::empty();
         let mut next_line = self.line;
 
         match self.mode {
@@ -191,7 +191,7 @@ impl Gpu {
                     
                     
                     if self.lcdc_reg.contains(DISPLAY_ENABLED) {
-                        events = Some(events::RENDER);
+                        events = events::RENDER;
                         //let palette = Palette { data: 0xfc };
                         //Gpu::print_tile(self.tiles[1], palette);
                         //self.print_framebuffer();

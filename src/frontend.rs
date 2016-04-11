@@ -1,9 +1,10 @@
-extern crate sdl2;
-
-use self::sdl2::pixels::{PixelFormatEnum, Color};
-use self::sdl2::event::Event;
-use self::sdl2::keyboard::Keycode;
-use self::sdl2::render::{Texture, TextureAccess, BlendMode};
+use sdl2;
+use sdl2::pixels::{PixelFormatEnum, Color};
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+use sdl2::render::{Texture, TextureAccess, BlendMode};
+use time::{Duration, SteadyTime};
+use std::thread;
 
 use super::Gameboy;
 use events;
@@ -54,13 +55,24 @@ impl Frontend {
         let mut texture = renderer.create_texture_streaming(
             PixelFormatEnum::RGB24, SCREEN_WIDTH  as u32, SCREEN_HEIGHT as u32
         ).unwrap();
-        texture.set_blend_mode(BlendMode::None);
-
+        renderer.set_draw_color(Color::RGB(0xff, 0xff, 0xff));
         renderer.clear();
+        renderer.present();
+
 
         let mut event_pump = self.context.event_pump().unwrap();
 
+        let turbo = false;
+        let frame_duration = Duration::seconds(1) / 60;
+        let mut emu_cycles: u64 = 0;
+        let mut last_time = SteadyTime::now();
+        let mut target_time = last_time + frame_duration;
         'running: loop {
+            let now = SteadyTime::now();
+            let delta = now - last_time;
+            last_time = now;
+            target_time = target_time + frame_duration;
+
             for event in event_pump.poll_iter() {
                 match event {
                     Event::Quit {..} |
@@ -70,13 +82,34 @@ impl Frontend {
                     _ => {}
                 }
             }
-            
-            let events = gameboy.simulate();
-            if let Some(events) = events {
+
+            let target_cycles = emu_cycles + if turbo {
+                ((4194304 / 4) / 60) as u64
+            } else {
+                (delta * (4194304 / 4)).num_seconds() as u64
+            };
+
+            loop {
+                let (cycles, events) = gameboy.simulate(target_cycles);
+
                 if events.contains(events::RENDER) {
                     self.update_texture(&mut texture, gameboy.framebuffer());
-                    renderer.copy(&texture, None, None);
-                    renderer.present();
+                }
+
+                if cycles >= target_cycles {
+                    emu_cycles = cycles;
+                    break;
+                }
+            }
+
+            renderer.copy(&texture, None, None);
+            renderer.present();
+
+            if !turbo {
+                let now = SteadyTime::now();
+                if now < target_time {
+                    let delta = (target_time - now).num_milliseconds() as u32;
+                    thread::sleep_ms(delta);
                 }
             }
         }

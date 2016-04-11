@@ -11,7 +11,7 @@ pub trait Bus {
     fn write(&mut self, u16, u8);
     fn has_irq(&self) -> bool;
     fn ack_irq(&mut self) -> Option<Interrupt>;
-    fn update(&mut self, u8) -> Option<events::Events>;
+    fn update(&mut self, u8) -> events::Events;
 }
 
 pub struct Hardware {
@@ -165,7 +165,7 @@ impl Bus for Hardware {
         self.int_controller.ack_irq()
     }
 
-    fn update(&mut self, cycles: u8) -> Option<events::Events> {
+    fn update(&mut self, cycles: u8) -> events::Events {
         self.timer.tick(cycles, &mut self.int_controller);
 
         self.gpu.step(cycles, &mut self.int_controller)

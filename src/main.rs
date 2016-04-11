@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate bitflags;
 extern crate getopts;
+extern crate sdl2;
+extern crate time;
 
 use getopts::Options;
 use std::io;
@@ -38,8 +40,14 @@ impl Gameboy {
         }
     }
 
-    fn simulate(&mut self) -> Option<events::Events> {
-        self.cpu.step()
+    fn simulate(&mut self, target_cycles: u64) -> (u64, events::Events) {
+        while self.cpu.total_cycles() < target_cycles {
+            let events = self.cpu.step();
+            if !events.is_empty() {
+                return (self.cpu.total_cycles(), events)
+            }
+        }
+        (self.cpu.total_cycles(), events::Events::empty())
     }
 
     pub fn framebuffer(&self) -> &gpu::Framebuffer {

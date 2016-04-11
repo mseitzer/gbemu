@@ -22,7 +22,7 @@ pub struct Cpu<B: Bus> {
     int_toggle_pending: bool,
 
     total_cycles: u64,
-    last_cycles: u8, // Cycles of last instruction
+    last_cycles: u8,
 
     pub bus: B,
 }
@@ -42,30 +42,22 @@ impl<B> Cpu<B> where B: Bus {
         }
     }
 
-    pub fn step(&mut self) -> Option<events::Events> {
+    pub fn step(&mut self) -> events::Events {
         let instr = self.fetch_instr();
-
         self.execute_instr(instr);
         
         let mut events = self.handle_updates();
 
         self.handle_interrupts();
         
-        let mut events2 = self.handle_updates();
+        events = events | self.handle_updates();
 
-        match events {
-            Some(e1) => if let Some(e2) = events {
-                Some(e1 | e2)
-            } else {
-                Some(e1)
-            },
-            None => events2
-        }
+        return events;
     }
 
-    fn handle_updates(&mut self) -> Option<events::Events> {
-        let mut events = None;
+    fn handle_updates(&mut self) -> events::Events {
         self.total_cycles += self.last_cycles as u64;
+        let mut events = events::Events::empty();
         if self.last_cycles != 0 {
             events = self.bus.update(self.last_cycles);
         }
@@ -78,9 +70,6 @@ impl<B> Cpu<B> where B: Bus {
 
         if self.int_flag && self.bus.has_irq(){
             if let Some(int) = self.bus.ack_irq() {
-                println!("Interrupt {:?} occured at cycle {}", 
-                    int, self.total_cycles);
-
                 self.int_flag = false;
 
                 let pc = self.regs.pc;
@@ -752,12 +741,8 @@ impl<B> Cpu<B> where B: Bus {
         self.bus.write(addr+1, hi);
     }
 
-    pub fn tot_m_cycles(&self) -> u64 {
+    pub fn total_cycles(&self) -> u64 {
         self.total_cycles
-    }
-
-    pub fn tot_c_cycles(&self) -> u64 {
-        self.total_cycles * 4
     }
 
     pub fn last_m_cycles(&self) -> u8 {
