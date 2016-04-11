@@ -3,11 +3,14 @@ extern crate sdl2;
 use self::sdl2::pixels::{PixelFormatEnum, Color};
 use self::sdl2::event::Event;
 use self::sdl2::keyboard::Keycode;
-use self::sdl2::render::{Texture, TextureAccess};
+use self::sdl2::render::{Texture, TextureAccess, BlendMode};
 
 use super::Gameboy;
 use events;
 use gpu::{Framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT};
+
+const DISPLAY_WIDTH: usize = 4 * SCREEN_WIDTH;
+const DISPLAY_HEIGHT: usize = 4 * SCREEN_HEIGHT;
 
 pub struct Frontend {
     context: sdl2::Sdl,
@@ -28,9 +31,8 @@ impl Frontend {
         texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
             for y in 0..SCREEN_HEIGHT {
                 for x in 0..SCREEN_WIDTH {
-                    let ofs = y*pitch + x*4;
+                    let ofs = y*pitch + x*3;
                     let fb_ofs = (y*SCREEN_WIDTH + x)*3;
-                    buffer[ofs+0] = 0xff;
                     buffer[ofs+0] = framebuffer[fb_ofs+0];
                     buffer[ofs+1] = framebuffer[fb_ofs+1];
                     buffer[ofs+2] = framebuffer[fb_ofs+2];
@@ -40,7 +42,8 @@ impl Frontend {
     }
 
     pub fn run(&mut self, gameboy: &mut Gameboy) {
-        let window = self.video.window("GBEmu", 4*160, 4*144)
+        let window = self.video.window("GBEmu", DISPLAY_WIDTH as u32,
+                                                DISPLAY_HEIGHT as u32)
             .position_centered()
             .opengl()
             .build()
@@ -49,8 +52,9 @@ impl Frontend {
         let mut renderer = window.renderer().build().unwrap();
 
         let mut texture = renderer.create_texture_streaming(
-            PixelFormatEnum::ARGB8888, 160, 144
+            PixelFormatEnum::RGB24, SCREEN_WIDTH  as u32, SCREEN_HEIGHT as u32
         ).unwrap();
+        texture.set_blend_mode(BlendMode::None);
 
         renderer.clear();
 
