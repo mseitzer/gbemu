@@ -23,6 +23,7 @@ mod int_controller;
 mod instructions;
 mod debug;
 mod events;
+mod cartridge;
 
 pub struct Gameboy {
     cpu: cpu::Cpu<hardware::Hardware>

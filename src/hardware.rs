@@ -4,6 +4,7 @@ use timer;
 use gpu;
 use int_controller::{self, Interrupt};
 use events;
+use cartridge;
 
 pub trait Bus {
     fn read(&self, u16) -> u8;
@@ -22,8 +23,7 @@ pub struct Hardware {
     bios_mapped: bool,
     bios: Box<[u8]>,
 
-    cart_rom: Box<[u8]>,
-    rom_bank_selector: u8,
+    cartridge: cartridge::Cartridge,
 }
 
 impl Hardware {
@@ -36,8 +36,7 @@ impl Hardware {
             bios_mapped: true,
             bios: bios,
 
-            cart_rom: cart_rom,
-            rom_bank_selector: 1,
+            cartridge: cartridge::Cartridge::new(cart_rom),
 
             int_controller: int_controller::IntController::new()
         }
@@ -51,19 +50,15 @@ impl Hardware {
                 if self.bios_mapped && a < 256 {
                     self.bios[a as usize]
                 } else {
-                    self.cart_rom[a as usize]
+                    self.cartridge.read_rom_bank0(a)
                 }
-            }
-
-            ROMBank1(a) => {
-                assert!(self.rom_bank_selector >= 1);
-                self.cart_rom[(16384 * self.rom_bank_selector as u16 + a) as usize]
-            }
+            },
+            ROMBank1(a) => self.cartridge.read_rom_bank1(a),
             
             TileData(a) => self.gpu.read_tile_data(a),
             TileMap1(a) => self.gpu.read_tile_map1(a),
             TileMap2(a) => self.gpu.read_tile_map2(a),
-            ERAM(a) => self.memory.read_eram(a),
+            ERAM(a) => self.cartridge.read_ram(a),
             RAM(a) => self.memory.read_ram(a),
             ZRAM(a) => self.memory.read_zram(a),
             Sprites(a) => self.memory.read_sprites(a),
@@ -101,10 +96,12 @@ impl Hardware {
         use mem_map::Addr::*;
 
         match mem_map::map_address(addr) {
+            ROMBank0(a) => self.cartridge.write(addr, value),
+            ROMBank1(a) => self.cartridge.write(addr, value),
             TileData(a) => self.gpu.write_tile_data(a, value),
             TileMap1(a) => self.gpu.write_tile_map1(a, value),
             TileMap2(a) => self.gpu.write_tile_map2(a, value),
-            ERAM(a) => self.memory.write_eram(a, value),
+            ERAM(a) => self.cartridge.write_ram(a, value),
             RAM(a) => self.memory.write_ram(a, value),
             Sprites(a) => self.memory.write_sprites(a, value),
             ZRAM(a) => self.memory.write_zram(a, value),
@@ -141,9 +138,8 @@ impl Hardware {
                     _ => println!("Output action {:#04x} not implemented", a)
                 }
             }
-
-            _ => panic!("Write to non-writeable memory region detected! ({:#06x})",
-                addr)
+            //_ => panic!("Write to non-writeable memory region detected! ({:#06x})",
+            //    addr)
         }
     }
 
