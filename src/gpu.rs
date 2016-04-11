@@ -11,7 +11,7 @@ const TILE_COUNT:           usize = 384;
 const TILE_MAP_SIZE:        usize = 1024;
 const TILE_WIDTH:           usize = 8;
 const TILE_HEIGHT:          usize = 8;
-const TILE_DATA0_OFS:       usize = 0x800;
+const TILE_DATA0_OFS:       usize = 256;
 
 pub type Framebuffer = [u8; SCREEN_WIDTH * SCREEN_HEIGHT * 3];
 
@@ -267,7 +267,7 @@ impl Gpu {
         if self.lcdc_reg.contains(TILE_DATA) {
             self.tiles[tile_idx]
         } else {
-            let ofs = (tile_idx as i8) as i32;
+            let ofs = (tile_idx as i8) as i32; // Here, the offset is signed
             self.tiles[(TILE_DATA0_OFS as i32 + ofs) as usize]
         }
     }
