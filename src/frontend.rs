@@ -67,7 +67,7 @@ impl Frontend {
         let mut emu_cycles: u64 = 0;
         let mut last_time = SteadyTime::now();
         let mut target_time = last_time + frame_duration;
-        'running: loop {
+        'main: loop {
             let now = SteadyTime::now();
             let delta = now - last_time;
             last_time = now;
@@ -77,15 +77,19 @@ impl Frontend {
                 match event {
                     Event::Quit {..} |
                     Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                        break 'running
+                        break 'main
                     },
                     _ => {}
                 }
             }
 
             let target_cycles = emu_cycles + if turbo {
+                // Simulate as many cycles as needed for one GB frame update to occur
                 ((4194304 / 4) / 60) as u64
             } else {
+                // Simulate as many cycles as needed for approx. 1M instructions 
+                // to be executed in a second. This is adapted depending on how
+                // long it takes to execute the instructions plus rendering a frame.
                 (delta * (4194304 / 4)).num_seconds() as u64
             };
 

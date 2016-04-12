@@ -61,7 +61,7 @@ impl Hardware {
             ERAM(a) => self.cartridge.read_ram(a),
             RAM(a) => self.memory.read_ram(a),
             ZRAM(a) => self.memory.read_zram(a),
-            Sprites(a) => self.memory.read_sprites(a),
+            Sprites(a) => self.gpu.read_oam(a),
             Zero => 0x00,
 
             IO(a) => {
@@ -81,6 +81,10 @@ impl Hardware {
                     0x44 => self.gpu.read_line_reg(),
                     0x45 => self.gpu.read_line_match_reg(),
                     0x47 => self.gpu.read_bg_palette_reg(),
+                    0x48 => self.gpu.read_obj_palette0_reg(),
+                    0x49 => self.gpu.read_obj_palette1_reg(),
+                    0x4A => self.gpu.read_window_y_reg(),
+                    0x4B => self.gpu.read_window_x_reg(),
 
                     // Interrupts
                     0x0f => self.int_controller.read_pending_reg(),
@@ -103,7 +107,7 @@ impl Hardware {
             TileMap2(a) => self.gpu.write_tile_map2(a, value),
             ERAM(a) => self.cartridge.write_ram(a, value),
             RAM(a) => self.memory.write_ram(a, value),
-            Sprites(a) => self.memory.write_sprites(a, value),
+            Sprites(a) => self.gpu.write_oam(a, value),
             ZRAM(a) => self.memory.write_zram(a, value),
             Zero => {},
 
@@ -127,6 +131,10 @@ impl Hardware {
                     }
                     0x45 => self.gpu.write_line_match_reg(value),
                     0x47 => self.gpu.write_bg_palette_reg(value),
+                    0x48 => self.gpu.write_obj_palette0_reg(value),
+                    0x49 => self.gpu.write_obj_palette1_reg(value),
+                    0x4A => self.gpu.write_window_y_reg(value),
+                    0x4B => self.gpu.write_window_x_reg(value),
 
                     // Unmap bios
                     0x50 if value != 0 => self.bios_mapped = false,

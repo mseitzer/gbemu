@@ -1,3 +1,4 @@
+use std::cmp;
 use super::int_controller::{Interrupt, IntController};
 use events;
 
@@ -5,13 +6,14 @@ pub const SCREEN_WIDTH:     usize = 160;
 pub const SCREEN_HEIGHT:    usize = 144;
 const BG_WIDTH:             usize = 256;
 const BG_HEIGHT:            usize = 256;
+const NUM_TILES:            usize = 384;
+const NUM_SPRITES:          usize = 40;
 const TILES_IN_SCREEN:      usize = 32;
-const TILE_SIZE:            usize = 8;
-const TILE_COUNT:           usize = 384;
 const TILE_MAP_SIZE:        usize = 1024;
 const TILE_WIDTH:           usize = 8;
 const TILE_HEIGHT:          usize = 8;
 const TILE_DATA0_OFS:       usize = 256;
+const OAM_ENTRY_SIZE:       usize = 4;
 
 pub type Framebuffer = [u8; SCREEN_WIDTH * SCREEN_HEIGHT * 3];
 
@@ -29,7 +31,7 @@ impl Tile {
 
     fn get_color_code(&self, x: usize, line: usize) -> u8 {
         let idx = 2 * line;
-        let shift = TILE_SIZE-1-(x as usize);
+        let shift = TILE_WIDTH-1-(x as usize);
         let lo = (self.data[idx] >> shift) & 0x1;
         let hi = (self.data[idx+1] >> shift) & 0x1;
         (hi << 1) | lo
@@ -81,6 +83,34 @@ impl Palette {
     }
 }
 
+bitflags! {
+    flags SpriteFlags: u8 {
+        const BG_PRIO   = 1 << 7,
+        const Y_FLIP    = 1 << 6,
+        const X_FLIP    = 1 << 5,
+        const PALETTE1  = 1 << 4        
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct Sprite {
+    pub y: u8,
+    pub x: u8,
+    pub tile_idx: u8,
+    pub flags: SpriteFlags
+}
+
+impl Sprite {
+    fn new() -> Sprite {
+        Sprite {
+            y: 0,
+            x: 0,
+            tile_idx: 0,
+            flags: SpriteFlags::empty()
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum GpuMode {
     HBlank = 0b00,
@@ -103,25 +133,25 @@ impl GpuMode {
 
 bitflags! {
     flags LCDCFlags: u8 {
-        const SHOW_BG         = 1 << 0,
-        const SHOW_SPRITES    = 1 << 1,
-        const SPRITE_SIZE     = 1 << 2,
-        const BG_TILE_MAP     = 1 << 3,
-        const TILE_DATA       = 1 << 4,
-        const SHOW_WINDOW     = 1 << 5,
-        const WINDOW_TILE_MAP = 1 << 6,
-        const DISPLAY_ENABLED = 1 << 7,
+        const SHOW_BG           = 1 << 0,
+        const SHOW_SPRITES      = 1 << 1,
+        const WIDE_SPRITES      = 1 << 2,
+        const BG_TILE_MAP       = 1 << 3,
+        const TILE_DATA         = 1 << 4,
+        const SHOW_WINDOW       = 1 << 5,
+        const WINDOW_TILE_MAP   = 1 << 6,
+        const DISPLAY_ENABLED   = 1 << 7,
     }
 }
 
 bitflags! {
     flags StatFlags: u8 {
-        const LINE_MATCH      = 1 << 2,
-        const HBLANK_INT      = 1 << 3,
-        const VBLANK_INT      = 1 << 4,
-        const OAM_INT         = 1 << 5,
-        const LINE_MATCH_INT  = 1 << 6,
-        const STAT_HI_BIT     = 1 << 7
+        const LINE_MATCH        = 1 << 2,
+        const HBLANK_INT        = 1 << 3,
+        const VBLANK_INT        = 1 << 4,
+        const OAM_INT           = 1 << 5,
+        const LINE_MATCH_INT    = 1 << 6,
+        const STAT_HI_BIT       = 1 << 7
     }
 }
 
@@ -140,9 +170,13 @@ pub struct Gpu {
     window_y: u8,
 
     bg_palette: Palette,
+    obj_palette0: Palette,
+    obj_palette1: Palette,
 
-    tiles: [Tile; TILE_COUNT],
+    tiles: [Tile; NUM_TILES],
     tile_map: [[u8; TILE_MAP_SIZE]; 2],
+
+    oam: [Sprite; NUM_SPRITES],
 
     framebuffer: Framebuffer,
 }
@@ -164,9 +198,13 @@ impl Gpu {
             window_y: 0,
 
             bg_palette: Palette::new(),
+            obj_palette0: Palette::new(),
+            obj_palette1: Palette::new(),
 
-            tiles: [Tile::new(); TILE_COUNT],
+            tiles: [Tile::new(); NUM_TILES],
             tile_map: [[0; TILE_MAP_SIZE]; 2],
+
+            oam: [Sprite::new(); NUM_SPRITES],
 
             framebuffer: [0; SCREEN_WIDTH * SCREEN_HEIGHT * 3],
         }
@@ -256,9 +294,9 @@ impl Gpu {
         self.framebuffer[(y * SCREEN_WIDTH + x) * 3 + 2] = b;
     }
 
-    fn get_bg_tile(&self, x: usize, y: usize) -> Tile {
-        let idx = (y / TILE_SIZE) * TILES_IN_SCREEN + x / TILE_SIZE;
-        let tile_idx = if self.lcdc_reg.contains(BG_TILE_MAP) {
+    fn get_tile(&self, x: usize, y: usize, use_map1: bool) -> Tile {
+        let idx = (y / TILE_HEIGHT) * TILES_IN_SCREEN + x / TILE_WIDTH;
+        let tile_idx = if use_map1 {
             self.tile_map[1][idx] as usize
         } else {
             self.tile_map[0][idx] as usize
@@ -272,30 +310,109 @@ impl Gpu {
         }
     }
 
+    fn write_tile_line(&mut self, tile: &Tile, palette: Palette, 
+                       y_ofs: usize, start_x: usize, len: usize) {
+        for i in 0..len {
+            let x_ofs = (start_x+i) as usize % TILE_WIDTH;
+            let color_code = tile.get_color_code(x_ofs, y_ofs);
+            let color = palette.get_color(color_code);
+            let line = self.line as usize;
+            self.write_framebuffer(start_x+i, line, color);
+        }
+    }
+
     fn render_line(&mut self) {
-        let write_tile_line = |gpu: &mut Gpu, tile: &Tile, palette: Palette, pos| {
-            for i in 0..TILE_SIZE {
-                let x = (pos+i) as usize % TILE_SIZE;
-                let y = gpu.line as usize % TILE_SIZE;
-                let color_code = tile.get_color_code(x, y);
-                let color = palette.get_color(color_code);
-                let line = gpu.line as usize;
-                gpu.write_framebuffer(pos+i, line, color);
-            }
-        };
-
-        let y = self.line;
-        let mut x = 0;
-
-        while x < SCREEN_WIDTH {
-            if self.lcdc_reg.contains(SHOW_BG) {
+        if self.lcdc_reg.contains(SHOW_BG) {
+            let y = self.line;
+            let mut x = 0;
+            while x < SCREEN_WIDTH {
                 let bg_x = (self.scroll_x as usize + x as usize) % BG_WIDTH;
                 let bg_y = (self.scroll_y as usize + y as usize) % BG_HEIGHT;
-                let tile = self.get_bg_tile(bg_x, bg_y);
+                let y_ofs = bg_y % TILE_HEIGHT;
+
+                let mut len = ((bg_x + 8) & !0b111) - bg_x;
+                if x + len >= SCREEN_WIDTH {
+                    len = SCREEN_WIDTH - x;
+                }
+
+                let use_map1 = self.lcdc_reg.contains(BG_TILE_MAP);
+                let tile = self.get_tile(bg_x, bg_y, use_map1);
                 let palette = self.bg_palette;
-                write_tile_line(self, &tile, palette, x);
+                self.write_tile_line(&tile, palette, y_ofs, x, len);
+                x += len;
             }
-            x += TILE_SIZE;
+        }
+
+        if self.lcdc_reg.contains(SHOW_WINDOW) && self.line >= self.window_y {
+            let y = self.line;
+            let mut x = cmp::max(self.window_x as i32 - 7, 0) as usize;
+            while x < SCREEN_WIDTH {
+                let wnd_x = (self.scroll_x as usize + x as usize) % BG_WIDTH;
+                let wnd_y = (self.scroll_y as usize + y as usize) % BG_HEIGHT;
+                let y_ofs = wnd_y % TILE_HEIGHT;
+                
+                let mut len = ((wnd_x + 8) & !0b111) - wnd_x;
+                if x + len >= SCREEN_WIDTH {
+                    len = SCREEN_WIDTH - x;
+                }
+                
+                let use_map1 = self.lcdc_reg.contains(WINDOW_TILE_MAP);
+                let tile = self.get_tile(wnd_x, wnd_y, use_map1);
+                let palette = self.bg_palette;
+                self.write_tile_line(&tile, palette, y_ofs, x, len);
+                x += len;
+            }
+        }
+
+        if self.lcdc_reg.contains(SHOW_SPRITES) {
+            let sprite_width = if self.lcdc_reg.contains(WIDE_SPRITES) { 16 }
+                               else { 8 };
+            let mut idx = 0;
+            while idx < self.oam.len() {
+                let sprite = self.oam[idx];
+                let y = sprite.y as i32 - 16;
+                if y <= self.line as i32 && y + 8 > self.line as i32 {
+                    let sprite_x = sprite.x as i32 - 8;
+                    let start_x = cmp::max(sprite_x, 0);
+                    let end_x = cmp::min(sprite_x+sprite_width, SCREEN_WIDTH as i32);
+                    
+                    let palette = if sprite.flags.contains(PALETTE1) {
+                        self.obj_palette1
+                    } else {
+                        self.obj_palette0
+                    };
+
+                    let y_ofs = if sprite.flags.contains(Y_FLIP) {
+                        TILE_HEIGHT - 1 - (self.line as i32 - y) as usize
+                    } else {
+                        (self.line as i32 - y) as usize
+                    };
+
+                    for x in start_x..end_x {
+                        let x_ofs = if sprite.flags.contains(X_FLIP) {
+                            sprite_width - 1 - (x % sprite_width)
+                        } else {
+                            x % sprite_width
+                        };
+
+                        let tile = if sprite_width == 8 {
+                            self.tiles[sprite.tile_idx as usize]
+                        } else if sprite_width == 16 && x_ofs < 8 {
+                            self.tiles[(sprite.tile_idx & !0b1) as usize]
+                        } else {
+                            self.tiles[((sprite.tile_idx & !0b1) + 1) as usize]
+                        };
+
+                        let color_code = tile.get_color_code(
+                            (x_ofs % 8) as usize, y_ofs)
+                        ;
+                        let color = palette.get_color(color_code);
+                        let line = self.line as usize;
+                        self.write_framebuffer(x as usize, line, color);
+                    }
+                }
+                idx += 1;
+            }
         }
     }
 
@@ -332,6 +449,34 @@ impl Gpu {
 
     pub fn write_tile_map2(&mut self, addr: u16, value: u8) {
         self.tile_map[1][addr as usize] = value;
+    }
+
+    // Sprites: 0xFE00-0xFE9F
+    pub fn read_oam(&self, addr: u16) -> u8 {
+        let sprite_idx = addr as usize / OAM_ENTRY_SIZE;
+        let sprite_ofs = addr as usize % OAM_ENTRY_SIZE;
+        match sprite_ofs {
+            0 => self.oam[sprite_idx].y,
+            1 => self.oam[sprite_idx].x,
+            2 => self.oam[sprite_idx].tile_idx,
+            3 => self.oam[sprite_idx].flags.bits,
+            _ => unreachable!()
+        }
+    }
+
+    pub fn write_oam(&mut self, addr: u16, value: u8) {
+        let sprite_idx = addr as usize / OAM_ENTRY_SIZE;
+        let sprite_ofs = addr as usize % OAM_ENTRY_SIZE;
+        match sprite_ofs {
+            0 => self.oam[sprite_idx].y = value,
+            1 => self.oam[sprite_idx].x = value,
+            2 => self.oam[sprite_idx].tile_idx = value,
+            3 => {
+                let flags = SpriteFlags::from_bits_truncate(value);
+                self.oam[sprite_idx].flags = flags;
+            }
+            _ => unreachable!()
+        }
     }
 
     // IO: 0xFF40
@@ -394,9 +539,46 @@ impl Gpu {
         self.bg_palette.data = value;
     }
 
+    // IO: 0xFF48
+    pub fn read_obj_palette0_reg(&self) -> u8 {
+        self.obj_palette0.data
+    }
+
+    pub fn write_obj_palette0_reg(&mut self, value: u8) {
+        self.obj_palette0.data = value;
+    }
+
+    // IO: 0xFF49
+    pub fn read_obj_palette1_reg(&self) -> u8 {
+        self.obj_palette1.data
+    }
+
+    pub fn write_obj_palette1_reg(&mut self, value: u8) {
+        self.obj_palette1.data = value;
+    }
+
+    // IO: 0xFF4A
+    pub fn read_window_y_reg(&self) -> u8 {
+        self.window_y
+    }
+
+    pub fn write_window_y_reg(&mut self, value: u8) {
+        self.window_y = value;
+    }
+
+    // IO: 0xFF4B
+    pub fn read_window_x_reg(&self) -> u8 {
+        self.window_x
+    }
+
+    pub fn write_window_x_reg(&mut self, value: u8) {
+        self.window_x = value;
+    }
+
+
     fn print_tile(tile: Tile, palette: Palette) {
-        for i in 0..TILE_SIZE {
-            for j in 0..TILE_SIZE {
+        for i in 0..TILE_HEIGHT {
+            for j in 0..TILE_WIDTH {
                 let color_code = tile.get_color_code(j, i);
                 let color = palette.get_color(color_code);
                 let ch = match color {
