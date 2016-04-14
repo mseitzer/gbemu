@@ -26,6 +26,7 @@ mod instructions;
 mod debug;
 mod events;
 mod cartridge;
+mod joypad;
 
 pub struct Gameboy {
     cpu: cpu::Cpu<hardware::Hardware>
@@ -52,6 +53,14 @@ impl Gameboy {
 
     pub fn framebuffer(&self) -> &gpu::Framebuffer {
         self.cpu.bus.framebuffer()
+    }
+
+    pub fn press_key(&mut self, key: joypad::Key) {
+        self.cpu.bus.press_key(key);
+    }
+
+    pub fn release_key(&mut self, key: joypad::Key) {
+        self.cpu.bus.release_key(key);
     }
 }
 

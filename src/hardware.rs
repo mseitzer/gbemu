@@ -5,6 +5,7 @@ use gpu;
 use int_controller::{self, Interrupt};
 use events;
 use cartridge;
+use joypad;
 
 pub trait Bus {
     fn read(&self, u16) -> u8;
@@ -18,6 +19,7 @@ pub struct Hardware {
     memory: Box<memory::Memory>,
     gpu: gpu::Gpu,
     timer: timer::Timer,
+    joypad: joypad::Joypad,
     int_controller: int_controller::IntController,
 
     bios_mapped: bool,
@@ -32,13 +34,14 @@ impl Hardware {
             memory: memory::Memory::new(),
             gpu: gpu::Gpu::new(),
             timer: timer::Timer::new(),
+            joypad: joypad::Joypad::new(),
+            int_controller: int_controller::IntController::new(),
 
             bios_mapped: true,
             bios: bios,
 
             cartridge: cartridge::Cartridge::new(cart_rom),
 
-            int_controller: int_controller::IntController::new()
         }
     }
 
@@ -65,8 +68,10 @@ impl Hardware {
             Zero => 0x00,
 
             IO(a) => {
-                // TODO: IO
                 match a {
+                    // Joypad
+                    0x00 => self.joypad.read_joypad_reg(),
+
                     // Timer
                     0x04 => self.timer.read_divider_reg(),
                     0x05 => self.timer.read_counter_reg(),
@@ -112,8 +117,10 @@ impl Hardware {
             Zero => {},
 
             IO(a) => {
-                // TODO: IO
                 match a {
+                    // Joypad
+                    0x00 => self.joypad.write_joypad_reg(value),
+
                     // Timer
                     0x04 => self.timer.write_divider_reg(value),
                     0x05 => self.timer.write_counter_reg(value),
@@ -153,6 +160,14 @@ impl Hardware {
 
     pub fn framebuffer(&self) -> &gpu::Framebuffer {
         self.gpu.get_framebuffer()
+    }
+
+    pub fn press_key(&mut self, key: joypad::Key) {
+        self.joypad.key_pressed(key);
+    }
+
+    pub fn release_key(&mut self, key: joypad::Key) {
+        self.joypad.key_released(key);
     }
 }
 
