@@ -9,11 +9,11 @@ use std::io;
 use std::io::prelude::*;
 use std::env;
 use std::error::Error;
-use std::fmt;
 use std::fs::File;
 
 #[macro_use]
 mod util;
+mod gameboy;
 mod frontend;
 mod cpu;
 mod hardware;
@@ -27,49 +27,6 @@ mod debug;
 mod events;
 mod cartridge;
 mod joypad;
-
-pub struct Gameboy {
-    cpu: cpu::Cpu<hardware::Hardware>
-}
-
-impl Gameboy {
-    fn new(bios: Box<[u8]>, rom: Box<[u8]>) -> Gameboy {
-        let hardware = hardware::Hardware::new(bios, rom);
-
-        Gameboy {
-            cpu: cpu::Cpu::new(hardware)
-        }
-    }
-
-    fn simulate(&mut self, target_cycles: u64) -> (u64, events::Events) {
-        while self.cpu.total_cycles() < target_cycles {
-            let events = self.cpu.step();
-            if !events.is_empty() {
-                return (self.cpu.total_cycles(), events)
-            }
-        }
-        (self.cpu.total_cycles(), events::Events::empty())
-    }
-
-    pub fn framebuffer(&self) -> &gpu::Framebuffer {
-        self.cpu.bus.framebuffer()
-    }
-
-    pub fn press_key(&mut self, key: joypad::Key) {
-        self.cpu.bus.press_key(key);
-    }
-
-    pub fn release_key(&mut self, key: joypad::Key) {
-        self.cpu.bus.release_key(key);
-    }
-}
-
-
-impl fmt::Display for Gameboy {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.cpu)
-    }
-}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -94,7 +51,7 @@ fn main() {
     if matches.opt_present("d") {
         debug::start(bios_buf, rom_buf);
     } else {
-        let mut gb = Gameboy::new(bios_buf, rom_buf);
+        let mut gb = gameboy::Gameboy::new(bios_buf, rom_buf);
         let mut frontend = frontend::Frontend::new();
         frontend.run(&mut gb);
     }

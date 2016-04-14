@@ -6,7 +6,7 @@ use sdl2::render::{Texture, TextureAccess, BlendMode};
 use time::{Duration, SteadyTime};
 use std::thread;
 
-use super::Gameboy;
+use gameboy::Gameboy;
 use events;
 use gpu::{Framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT};
 

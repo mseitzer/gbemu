@@ -753,6 +753,10 @@ impl<B> Cpu<B> where B: Bus {
         self.last_cycles * 4
     }
 
+    pub fn hardware(&mut self) -> &mut B {
+        &mut self.bus
+    }
+
     fn alu_add_bytes(&mut self, a: u8, b: u8, with_carry: bool) -> u8 {
         let carry = if self.regs.f.contains(CARRY) {with_carry as u8} else {0};
         let bc = b.wrapping_add(carry);

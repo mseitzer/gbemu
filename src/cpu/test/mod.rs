@@ -3,6 +3,7 @@ use cpu::debug::DebugInfo;
 use hardware::Bus;
 use int_controller::Interrupt;
 use instructions::{Instr, Op, Immediate, Reg8, Reg16, Addr};
+use events::Events;
 
 mod test_misc;
 mod test_load;
@@ -27,7 +28,7 @@ impl Bus for TestHardware {
 
     fn has_irq(&self) -> bool { false }
     fn ack_irq(&mut self) -> Option<Interrupt> { None }
-    fn update(&mut self, cycles: u8) {}
+    fn update(&mut self, cycles: u8) -> Events { Events::empty() }
 }
 
 fn create_hardware(memory: Vec<u8>) -> TestHardware {
