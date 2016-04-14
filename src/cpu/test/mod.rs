@@ -209,6 +209,7 @@ fn test_opcodes() {
         (vec![0xD2, 0x33, 0x0c], Op::jp_cond { cond: Condition::NC }, Imm16(0x0c33)),
         (vec![0xDA, 0x56, 0x44], Op::jp_cond { cond: Condition::C }, Imm16(0x4456)),
 
+        (vec![0xE9], Op::jp_ind, None),
     ];
 
     for (code, op, imm) in opcodes {

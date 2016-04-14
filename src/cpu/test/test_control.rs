@@ -134,3 +134,18 @@ fn test_jp_cond() {
         jp_rel_cond_helper(0x2000, 0xffff, cond, flag_true);
     }
 }
+
+#[test]
+fn test_jp_indirect() {
+    let cpu = test_instr(
+        Instr { op: Op::jp_ind, imm: Immediate::None},
+        &[0x00],
+        |cpu| {
+            cpu.regs.pc = 0x333;
+            cpu.regs.write16(Reg16::HL, 0x5555);
+        }
+    );
+
+    assert_eq!(cpu.last_cycles, 1);
+    assert_eq!(cpu.regs.pc, 0x5555);
+}
