@@ -2,7 +2,7 @@ use cpu::Cpu;
 use cpu::debug::DebugInfo;
 use hardware::Bus;
 use int_controller::Interrupt;
-use instructions::{Instr, Op, Immediate, Reg8, Reg16, Addr};
+use instructions::{Instr, Op, Immediate, Reg8, Reg16, Addr, Condition};
 use events::Events;
 
 mod test_misc;
@@ -12,6 +12,7 @@ mod test_add;
 mod test_inc;
 mod test_dec;
 mod test_shift_rot;
+mod test_control;
 
 struct TestHardware {
     memory: Vec<u8>
@@ -90,7 +91,7 @@ fn test_opcodes() {
         (vec![0x15], Op::dec8_reg { src: D }, None),
         (vec![0x16, 0xff], Op::ld8_imm { dest: D }, Imm8(0xff)),
         (vec![0x17], Op::rla, None),
-        // TODO: 0x18
+        (vec![0x18, 0xac], Op::jp_rel, Imm8(0xac)),
         (vec![0x19], Op::add16_reg { src: DE }, None),
         (vec![0x1A], Op::ld8_ind { dest: A, src: Addr::DE }, None),
         (vec![0x1B], Op::dec16_reg { src: DE }, None),
@@ -99,7 +100,7 @@ fn test_opcodes() {
         (vec![0x1E, 0xff], Op::ld8_imm { dest: E }, Imm8(0xff)),
         (vec![0x1F], Op::rra, None),
 
-        // TODO: 0x20
+        (vec![0x20, 0xbc], Op::jp_rel_cond { cond: Condition::NZ }, Imm8(0xbc)),
         (vec![0x21, 0x99, 0x11], Op::ld16_imm { dest: HL }, Imm16(0x1199)),
         (vec![0x22], Op::st8_ind { dest: Addr::HLI, src: A}, None),
         (vec![0x23], Op::inc16_reg { src: HL }, None),
@@ -107,7 +108,7 @@ fn test_opcodes() {
         (vec![0x25], Op::dec8_reg { src: H }, None),
         (vec![0x26, 0xff], Op::ld8_imm { dest: H }, Imm8(0xff)),
         (vec![0x27], Op::daa, None),
-        // TODO: 0x28
+        (vec![0x28, 0xec], Op::jp_rel_cond { cond: Condition::Z }, Imm8(0xec)),
         (vec![0x29], Op::add16_reg { src: HL }, None),
         (vec![0x2A], Op::ld8_ind { dest: A, src: Addr::HLI }, None),
         (vec![0x2B], Op::dec16_reg { src: HL }, None),
@@ -116,7 +117,7 @@ fn test_opcodes() {
         (vec![0x2E, 0xff], Op::ld8_imm { dest: L }, Imm8(0xff)),
         (vec![0x2F], Op::cpl, None),
 
-        // TODO: 0x30
+        (vec![0x30, 0xcc], Op::jp_rel_cond { cond: Condition::NC }, Imm8(0xcc)),
         (vec![0x31, 0x99, 0x11], Op::ld16_imm { dest: SP }, Imm16(0x1199)),
         (vec![0x32], Op::st8_ind { dest: Addr::HLD, src: A }, None),
         (vec![0x33], Op::inc16_reg { src: SP }, None),
@@ -124,7 +125,7 @@ fn test_opcodes() {
         (vec![0x35], Op::dec8_ind, None),
         (vec![0x36, 0xdd], Op::st8_ind_imm, Imm8(0xdd)),
         (vec![0x37], Op::scf, None),
-        // TODO: 0x38
+        (vec![0x38, 0xfc], Op::jp_rel_cond { cond: Condition::C }, Imm8(0xfc)),
         (vec![0x39], Op::add16_reg { src: SP }, None),
         (vec![0x3A], Op::ld8_ind { dest: A, src: Addr::HLD }, None),
         (vec![0x3B], Op::dec16_reg { src: SP }, None),

@@ -14,7 +14,7 @@ fn add16_helper(src: Reg16, value1: u16, value2: u16) {
             cpu.regs.write16(src, value2);
         }
     );
-    println!("{:?}", src);
+    
     let actual = cpu.regs.read16(Reg16::HL);
     assert_eq!(cpu.last_cycles, 2);
     assert_eq!(actual, value1.wrapping_add(value2));
