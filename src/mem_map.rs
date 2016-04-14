@@ -22,7 +22,8 @@ pub const UNMAPPED_HI: u16 = 0xFEFF;
 pub const IO_LO: u16 = 0xFF00;
 pub const IO_HI: u16 = 0xFF7F;
 pub const ZRAM_LO: u16 = 0xFF80;
-pub const ZRAM_HI: u16 = 0xFFFF;
+pub const ZRAM_HI: u16 = 0xFFFE;
+pub const INT_ENABLE_REG: u16 = 0xFFFF;
 
 pub enum Addr {
     ROMBank0(u16),
@@ -54,6 +55,7 @@ pub fn map_address(addr: u16) -> Addr {
         UNMAPPED_LO ... UNMAPPED_HI => Zero,
         IO_LO ... IO_HI => IO(addr-IO_LO),
         ZRAM_LO ... ZRAM_HI => ZRAM(addr-ZRAM_LO),
+        INT_ENABLE_REG => IO(addr-IO_LO),
         _ => panic!("Access to unknown memory region detected! ({:#06x})", addr)
     }
 }
