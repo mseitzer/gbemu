@@ -1,3 +1,4 @@
+use int_controller::{IntController, Interrupt};
 
 pub enum Key {
     Right,
@@ -62,8 +63,9 @@ impl Joypad {
         }
     }
 
-    pub fn key_pressed(&mut self, key: Key) {
+    pub fn key_pressed(&mut self, key: Key, int_controller: &mut IntController) {
         self.keys_pressed[key.column()].insert(KeysPressed::from_key(key));
+        int_controller.set_int_pending(Interrupt::Joypad);
     }
 
     pub fn key_released(&mut self, key: Key) {
@@ -72,7 +74,7 @@ impl Joypad {
 
     pub fn read_joypad_reg(&self) -> u8 {
         let col_bits = if self.active_column == 1 { 0b10000 } else { 0b1000};
-        col_bits | self.keys_pressed[self.active_column].bits 
+        col_bits | (!self.keys_pressed[self.active_column].bits & 0b1111)
     }
 
     pub fn write_joypad_reg(&mut self, value: u8) {

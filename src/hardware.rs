@@ -163,7 +163,7 @@ impl Hardware {
     }
 
     pub fn press_key(&mut self, key: joypad::Key) {
-        self.joypad.key_pressed(key);
+        self.joypad.key_pressed(key, &mut self.int_controller);
     }
 
     pub fn release_key(&mut self, key: joypad::Key) {

@@ -8,6 +8,7 @@ use std::thread;
 
 use gameboy::Gameboy;
 use events;
+use joypad;
 use gpu::{Framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT};
 
 const DISPLAY_WIDTH: usize = 4 * SCREEN_WIDTH;
@@ -75,9 +76,20 @@ impl Frontend {
 
             for event in event_pump.poll_iter() {
                 match event {
-                    Event::Quit {..} |
+                    Event::Quit {..} => break 'main,
                     Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                         break 'main
+                    },
+
+                    Event::KeyDown { keycode: Some(keycode), .. } => {
+                        if let Some(key) = Frontend::map_keycode(keycode) {
+                            gameboy.press_key(key);
+                        }
+                    },
+                    Event::KeyUp { keycode: Some(keycode), .. } => {
+                        if let Some(key) = Frontend::map_keycode(keycode) {
+                            gameboy.release_key(key);
+                        }
                     },
                     _ => {}
                 }
@@ -116,6 +128,26 @@ impl Frontend {
                     thread::sleep_ms(delta);
                 }
             }
+        }
+    }
+
+    fn map_keycode(keycode: Keycode) -> Option<joypad::Key> {
+        match keycode {
+            Keycode::Right  => Some(joypad::Key::Right),
+            Keycode::Left   => Some(joypad::Key::Left),
+            Keycode::Down   => Some(joypad::Key::Down),
+            Keycode::Up     => Some(joypad::Key::Up),
+            Keycode::A      => Some(joypad::Key::Right),
+            Keycode::D      => Some(joypad::Key::Left),
+            Keycode::S      => Some(joypad::Key::Down),
+            Keycode::W      => Some(joypad::Key::Up),
+            Keycode::F      => Some(joypad::Key::A),
+            Keycode::G      => Some(joypad::Key::B),
+            Keycode::J      => Some(joypad::Key::A),
+            Keycode::K      => Some(joypad::Key::B),
+            Keycode::Space  => Some(joypad::Key::Select),
+            Keycode::Return => Some(joypad::Key::Start),
+            _               => None
         }
     }
 }
