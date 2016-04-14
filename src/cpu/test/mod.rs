@@ -204,10 +204,15 @@ fn test_opcodes() {
 
         (vec![0xC2, 0x01, 0xfc], Op::jp_cond { cond: Condition::NZ }, Imm16(0xfc01)),
         (vec![0xC3, 0xaa, 0xbb], Op::jp, Imm16(0xbbaa)),
+        (vec![0xC4, 0xff, 0xee], Op::call_cond { cond: Condition::NZ }, Imm16(0xeeff)),
         (vec![0xCA, 0x02, 0xec], Op::jp_cond { cond: Condition::Z }, Imm16(0xec02)),
+        (vec![0xCC, 0x88, 0x77], Op::call_cond { cond: Condition::Z }, Imm16(0x7788)),
+        (vec![0xCD, 0xdd, 0xcc], Op::call, Imm16(0xccdd)),
 
         (vec![0xD2, 0x33, 0x0c], Op::jp_cond { cond: Condition::NC }, Imm16(0x0c33)),
+        (vec![0xD4, 0x66, 0x77], Op::call_cond { cond: Condition::NC }, Imm16(0x7766)),
         (vec![0xDA, 0x56, 0x44], Op::jp_cond { cond: Condition::C }, Imm16(0x4456)),
+        (vec![0xDC, 0xff, 0x77], Op::call_cond { cond: Condition::C }, Imm16(0x77ff)),
 
         (vec![0xE9], Op::jp_ind, None),
     ];
