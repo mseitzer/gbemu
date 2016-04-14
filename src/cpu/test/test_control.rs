@@ -14,7 +14,7 @@ fn cmp_cond_flags(cond: Condition, flags: Flags) -> bool {
 
 #[test]
 fn test_jp_rel() {
-    // JR Reg8
+    // JR Imm8
     let op = Op::jp_rel;
     let cpu = test_instr(
         Instr { op: op, imm: Immediate::Imm8(0x42) },
@@ -30,7 +30,7 @@ fn test_jp_rel() {
 
 #[test]
 fn test_jp_rel_neg() {
-    // JR Reg8
+    // JR Imm8
     let op = Op::jp_rel;
     let cpu = test_instr(
         Instr { op: op, imm: Immediate::Imm8(0xf0) },
@@ -66,6 +66,8 @@ fn jp_rel_cond_helper(pc: u16, ofs: i8, cond: Condition, flags: Flags) {
 
 #[test]
 fn test_jp_rel_cond() {
+    // JR Cond, Imm8
+
     let conditions = [
         (Condition::NZ, Flags::empty(), ZERO),
         (Condition::NC, Flags::empty(), CARRY),
@@ -78,5 +80,57 @@ fn test_jp_rel_cond() {
         jp_rel_cond_helper(0x2000, 0x42, cond, flag_true);
         jp_rel_cond_helper(0x3000, -0x42, cond, flag_false);
         jp_rel_cond_helper(0x4000, -0x42, cond, flag_true);
+    }
+}
+
+#[test]
+fn test_jp() {
+    // JP Imm16
+    let op = Op::jp;
+    let cpu = test_instr(
+        Instr { op: op, imm: Immediate::Imm16(0x4200) },
+        &[0x00],
+        |cpu| {
+            cpu.regs.pc = 0x30;
+        }
+    );
+
+    assert_eq!(cpu.last_cycles, 4);
+    assert_eq!(cpu.regs.pc, 0x4200);
+}
+
+fn jp_cond_helper(pc: u16, target: u16, cond: Condition, flags: Flags) {
+    let op = Op::jp_cond { cond: cond };
+    let cpu = test_instr(
+        Instr { op: op, imm: Immediate::Imm16(target) },
+        &[0x00],
+        |cpu| {
+            cpu.regs.f = flags;
+            cpu.regs.pc = pc;
+        }
+    );
+
+    if cmp_cond_flags(cond, flags) {
+        assert_eq!(cpu.last_cycles, 4);
+        assert_eq!(cpu.regs.pc, target);
+    } else {
+        assert_eq!(cpu.last_cycles, 3);
+        assert_eq!(cpu.regs.pc, pc);
+    }
+}
+
+#[test]
+fn test_jp_cond() {
+    // JP Cond, Imm16
+    let conditions = [
+        (Condition::NZ, Flags::empty(), ZERO),
+        (Condition::NC, Flags::empty(), CARRY),
+        (Condition::Z, ZERO, Flags::empty()),
+        (Condition::C, CARRY, Flags::empty()),
+    ];
+
+    for &(cond, flag_true, flag_false) in conditions.iter() {
+        jp_rel_cond_helper(0x1000, 0x444, cond, flag_false);
+        jp_rel_cond_helper(0x2000, 0xffff, cond, flag_true);
     }
 }

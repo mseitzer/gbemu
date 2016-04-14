@@ -201,6 +201,14 @@ fn test_opcodes() {
         (vec![0x7D], Op::ld8_rr { dest: A, src: L }, None),
         (vec![0x7E], Op::ld8_ind { dest: A, src: Addr::HL }, None),
         (vec![0x7F], Op::ld8_rr { dest: A, src: A }, None),
+
+        (vec![0xC2, 0x01, 0xfc], Op::jp_cond { cond: Condition::NZ }, Imm16(0xfc01)),
+        (vec![0xC3, 0xaa, 0xbb], Op::jp, Imm16(0xbbaa)),
+        (vec![0xCA, 0x02, 0xec], Op::jp_cond { cond: Condition::Z }, Imm16(0xec02)),
+
+        (vec![0xD2, 0x33, 0x0c], Op::jp_cond { cond: Condition::NC }, Imm16(0x0c33)),
+        (vec![0xDA, 0x56, 0x44], Op::jp_cond { cond: Condition::C }, Imm16(0x4456)),
+
     ];
 
     for (code, op, imm) in opcodes {
