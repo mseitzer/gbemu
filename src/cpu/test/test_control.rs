@@ -192,9 +192,77 @@ fn call_cond_helper(pc: u16, target: u16, cond: Condition, flags: Flags) {
 
 #[test]
 fn test_call_cond() {
-    // Call Cond, Imm16
+    // CALL Cond, Imm16
     for &(cond, flag_true, flag_false) in conditions().iter() {
         call_cond_helper(0x10ff, 0x444, cond, flag_false);
         call_cond_helper(0x2010, 0xffee, cond, flag_true);
+    }
+}
+
+#[test]
+fn test_ret() {
+    // RET
+    let cpu = test_instr(
+        Instr { op: Op::ret, imm: Immediate::None },
+        &[0x00, 0xaa, 0xbb, 0x00],
+        |cpu| {
+            cpu.regs.pc = 0x0211;
+            cpu.regs.sp = 0x0001;
+        }
+    );
+
+    assert_eq!(cpu.last_cycles, 4);
+    assert_eq!(cpu.regs.pc, 0xbbaa);
+    assert_eq!(cpu.regs.sp, 0x0003);
+}
+
+/*#[test]
+TODO: Recheck IME system in cpu
+fn test_reti() {
+    // RETI
+    let cpu = test_instr(
+        Instr { op: Op::reti, imm: Immediate::None },
+        &[0x00, 0xbb, 0xcc, 0x00],
+        |cpu| {
+            cpu.regs.pc = 0x5511;
+            cpu.regs.sp = 0x0001;
+            cpu.
+        }
+    );
+
+    assert_eq!(cpu.last_cycles, 4);
+    assert_eq!(cpu.regs.pc, 0xccbb);
+    assert_eq!(cpu.regs.sp, 0x0003);
+}*/
+
+fn ret_cond_helper(pc: u16, target: u16, cond: Condition, flags: Flags) {
+    let op = Op::ret_cond { cond: cond };
+    let cpu = test_instr(
+        Instr { op: op, imm: Immediate::Imm16(target) },
+        &[0x00, target as u8, (target >> 8) as u8, 0x00],
+        |cpu| {
+            cpu.regs.f = flags;
+            cpu.regs.pc = pc;
+            cpu.regs.sp = 0x0001;
+        }
+    );
+
+    if cmp_cond_flags(cond, flags) {
+        assert_eq!(cpu.last_cycles, 5);
+        assert_eq!(cpu.regs.pc, target);
+        assert_eq!(cpu.regs.sp, 3);
+    } else {
+        assert_eq!(cpu.last_cycles, 2);
+        assert_eq!(cpu.regs.pc, pc);
+        assert_eq!(cpu.regs.sp, 1);
+    }
+}
+
+#[test]
+fn test_ret_cond() {
+    // RET Cond
+    for &(cond, flag_true, flag_false) in conditions().iter() {
+        ret_cond_helper(0x10fa, 0x344, cond, flag_false);
+        ret_cond_helper(0x2b15, 0xf4e9, cond, flag_true);
     }
 }
