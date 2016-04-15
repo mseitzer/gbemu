@@ -15,16 +15,22 @@ mod test;
 
 use self::registers::{Registers, Flags, ZERO, SUB, CARRY, HCARRY};
 
+enum IntEnable {
+    No,
+    Pending,
+    Enable
+}
+
 pub struct Cpu<B: Bus> {
     regs: Registers,
 
     int_flag: bool,
-    int_toggle_pending: bool,
+    int_enable: IntEnable,
 
     total_cycles: u64,
     last_cycles: u8,
 
-    pub bus: B,
+    bus: B,
 }
 
 impl<B> Cpu<B> where B: Bus {
@@ -33,22 +39,32 @@ impl<B> Cpu<B> where B: Bus {
             regs: Registers::new(),
 
             int_flag: false,
-            int_toggle_pending: false,
+            int_enable: IntEnable::No,
 
             total_cycles: 0,
             last_cycles: 0,
 
-            bus: bus
+            bus: bus,
         }
     }
 
     pub fn step(&mut self) -> events::Events {
-        let instr = self.fetch_instr();
-        self.execute_instr(instr);
-        
-        let mut events = self.handle_updates();
+        match self.int_enable {
+            IntEnable::No => {},
+            IntEnable::Pending => {
+                self.int_enable = IntEnable::Enable;
+            },
+            IntEnable::Enable => {
+                self.int_flag = true;
+                self.int_enable = IntEnable::No;
+            }
+        }
 
         self.handle_interrupts();
+        let mut events = self.handle_updates();
+
+        let instr = self.fetch_instr();
+        self.execute_instr(instr);
         
         events = events | self.handle_updates();
 
@@ -68,8 +84,10 @@ impl<B> Cpu<B> where B: Bus {
     fn handle_interrupts(&mut self) {
         use super::int_controller::Interrupt::*;
 
-        if self.int_flag && self.bus.has_irq(){
+        if self.int_flag && self.bus.has_irq() {
             if let Some(int) = self.bus.ack_irq() {
+                println!("Interrupt {:?} occured at {}, going to {:#06x}", int, self.total_cycles, int.isr_addr());
+
                 self.int_flag = false;
 
                 let pc = self.regs.pc;
@@ -104,8 +122,6 @@ impl<B> Cpu<B> where B: Bus {
         use instructions::Immediate::{Imm8, Imm16};
 
         let mut jumped = false;
-        let toggle_ints = self.int_toggle_pending;
-        self.int_toggle_pending = false;
 
         match instr.op {
             Op::nop => {},
@@ -116,10 +132,11 @@ impl<B> Cpu<B> where B: Bus {
                 // TODO: implement
             },
             Op::di => {
-                self.int_toggle_pending = true;
+                self.int_enable = IntEnable::No;
+                self.int_flag = false;
             },
             Op::ei => {
-                self.int_toggle_pending = true;
+                self.int_enable = IntEnable::Pending;
             },
 
             /* load/store instructions */
@@ -674,10 +691,6 @@ impl<B> Cpu<B> where B: Bus {
             self.last_cycles = instructions::cycles_jmp(&instr.op, true);
         } else {
             self.last_cycles = instructions::cycles(&instr.op);
-        }
-        
-        if toggle_ints {
-            self.int_flag = !self.int_flag;
         }
     }    
 

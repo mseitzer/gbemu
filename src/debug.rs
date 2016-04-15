@@ -158,7 +158,7 @@ pub fn start(bios: Box<[u8]>, rom: Box<[u8]>) {
                     }
                 }
             } else if input.starts_with("screen") {
-                let framebuffer = cpu.bus.framebuffer();
+                let framebuffer = cpu.hardware().framebuffer();
                 print_framebuffer(framebuffer);
             } else {
                 println!("Unknown command '{}'. \

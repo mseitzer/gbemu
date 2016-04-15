@@ -34,11 +34,11 @@ impl Gameboy {
     }
 
     pub fn press_key(&mut self, key: joypad::Key) {
-        self.cpu.bus.press_key(key);
+        self.cpu.hardware().press_key(key);
     }
 
     pub fn release_key(&mut self, key: joypad::Key) {
-        self.cpu.bus.release_key(key);
+        self.cpu.hardware().release_key(key);
     }
 }
 

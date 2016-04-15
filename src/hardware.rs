@@ -41,7 +41,6 @@ impl Hardware {
             bios: bios,
 
             cartridge: cartridge::Cartridge::new(cart_rom),
-
         }
     }
 
@@ -134,7 +133,7 @@ impl Hardware {
                     0x43 => self.gpu.write_scroll_x_reg(value),
                     0x44 => {
                         // Unclear if this is allowed or not
-                        panic!("Attempting to write to line reg")
+                        //panic!("Attempting to write to line reg")
                     }
                     0x45 => self.gpu.write_line_match_reg(value),
                     0x47 => self.gpu.write_bg_palette_reg(value),
