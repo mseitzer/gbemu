@@ -1,5 +1,6 @@
 use int_controller::{IntController, Interrupt};
 
+#[derive(Debug)]
 pub enum Key {
     Right,
     Left,
@@ -73,16 +74,24 @@ impl Joypad {
     }
 
     pub fn read_joypad_reg(&self) -> u8 {
-        let col_bits = if self.active_column == 1 { 0b10000 } else { 0b1000};
-        col_bits | (!self.keys_pressed[self.active_column].bits & 0b1111)
+        let val = match self.active_column {
+            0 => 0b100000 | (!self.keys_pressed[0].bits & 0b1111),
+            1 => 0b010000 | (!self.keys_pressed[1].bits & 0b1111),
+            2 => (!self.keys_pressed[0].bits & 0b1111)
+               | (!self.keys_pressed[1].bits & 0b1111),
+            3 => 0b111111,
+            _ => unreachable!()
+        };
+        return val;
     }
 
     pub fn write_joypad_reg(&mut self, value: u8) {
-        if value & 0b10000 == 0 {
-            self.active_column = 1;
-        }
-        if value & 0b1000 == 0 {
-            self.active_column = 0;
+        self.active_column = match (value >> 4) & 0b11 {
+            0b00 => 2,
+            0b10 => 0,
+            0b01 => 1,
+            0b11 => 3,
+            _    => unreachable!()
         }
     }
 }
