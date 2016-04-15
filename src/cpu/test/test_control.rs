@@ -266,3 +266,26 @@ fn test_ret_cond() {
         ret_cond_helper(0x2b15, 0xf4e9, cond, flag_true);
     }
 }
+
+#[test]
+fn test_reset() {
+    // RST Target
+    let targets: [u16; 8] = [0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38];
+
+    for target in targets.iter() {
+        let cpu = test_instr(
+            Instr { op: Op::rst { target: *target }, imm: Immediate::None },
+            &[0x00, 0x00, 0x00, 0x00],
+            |cpu| {
+                cpu.regs.pc = 0x5214;
+                cpu.regs.sp = 0x0003;
+            }
+        );
+
+        assert_eq!(cpu.last_cycles, 4);
+        assert_eq!(cpu.regs.pc, *target as u16);
+        assert_eq!(cpu.regs.sp, 0x0001);
+        assert_eq!(cpu.bus.read(0x0001), 0x14);
+        assert_eq!(cpu.bus.read(0x0002), 0x52);
+    }
+}
