@@ -1,4 +1,5 @@
 use hardware::Bus;
+use cpu::IntEnable;
 use cpu::registers::{Flags, ZERO, SUB, HCARRY, CARRY};
 use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr, Condition};
 use super::{TestHardware, run_test, test_instr};
@@ -216,8 +217,7 @@ fn test_ret() {
     assert_eq!(cpu.regs.sp, 0x0003);
 }
 
-/*#[test]
-TODO: Recheck IME system in cpu
+#[test]
 fn test_reti() {
     // RETI
     let cpu = test_instr(
@@ -226,14 +226,16 @@ fn test_reti() {
         |cpu| {
             cpu.regs.pc = 0x5511;
             cpu.regs.sp = 0x0001;
-            cpu.
+            cpu.int_enable = IntEnable::Pending;
         }
     );
 
     assert_eq!(cpu.last_cycles, 4);
     assert_eq!(cpu.regs.pc, 0xccbb);
     assert_eq!(cpu.regs.sp, 0x0003);
-}*/
+    assert_eq!(cpu.int_enable, IntEnable::No);
+    assert_eq!(cpu.int_flag, true);
+}
 
 fn ret_cond_helper(pc: u16, target: u16, cond: Condition, flags: Flags) {
     let op = Op::ret_cond { cond: cond };
