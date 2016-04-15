@@ -15,6 +15,7 @@ mod test;
 
 use self::registers::{Registers, Flags, ZERO, SUB, CARRY, HCARRY};
 
+#[cfg_attr(test, derive(Eq, PartialEq, Debug))]
 enum IntEnable {
     No,
     Pending,
@@ -629,6 +630,7 @@ impl<B> Cpu<B> where B: Bus {
             Op::reti => {
                 self.regs.pc = self.pop();
                 self.int_flag = true;
+                self.int_enable = IntEnable::No;
             },
 
             Op::rst { target } => {
