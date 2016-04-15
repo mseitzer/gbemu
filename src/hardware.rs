@@ -7,6 +7,81 @@ use events;
 use cartridge;
 use joypad;
 
+mod dma {
+    #[derive(Copy, Clone, Debug)]
+    enum DmaState {
+        Inactive,
+        Requested,
+        Starting,
+        Copying,
+        Ending,
+    }
+
+    pub struct Dma {
+        state: DmaState,
+        source: u16,
+        clock: u64,
+    }
+
+    impl Dma {
+        pub fn new() -> Dma {
+            Dma {
+                state: DmaState::Inactive,
+                source: 0x0000,
+                clock: 0,
+            }
+        }
+
+        pub fn is_active(&self) -> bool {
+            match self.state {
+                DmaState::Inactive => false,
+                _                  => true
+            }
+        }
+
+        pub fn initiate(&mut self, source: u8) {
+            self.state = DmaState::Requested;
+            self.source = (source as u16) << 8;
+            self.clock = 0;
+        }
+
+        pub fn tick(&mut self, cycles: u8) -> (u16, u16, u16) {
+            // DMA takes 162 cycles (probably):
+            // 1 cycle startup, 160 cycles copy, 1 cycle ending
+            use self::DmaState::*;
+
+            let new_clock = self.clock + cycles as u64;
+            let new_state = match self.state {
+                Inactive => Inactive,
+                Requested if new_clock == 1 => Starting,
+                Requested if new_clock > 1 => Copying,
+                Starting => Copying,
+                Copying if new_clock == 161 => Ending,
+                Copying if new_clock > 161 => Inactive,
+                Ending if new_clock >= 162 => Inactive,
+                state @ _ => state
+            };
+            
+            if let Copying = new_state {
+                let ofs = self.clock.saturating_sub(1) as u16;
+                let len = match self.state {
+                    Requested | Starting => (new_clock - 1 - self.clock) as u16,
+                    Ending | Inactive => 160 - ofs, // Copy only the remaining bytes
+                    _ => (new_clock - self.clock) as u16,
+                };
+
+                self.state = new_state;
+                self.clock = new_clock;
+                (self.source, ofs, len)
+            } else {
+                self.state = new_state;
+                self.clock = new_clock;
+                (0, 0, 0)
+            }
+        }
+    }
+}
+
 pub trait Bus {
     fn read(&self, u16) -> u8;
     fn write(&mut self, u16, u8);
@@ -26,6 +101,7 @@ pub struct Hardware {
     bios: Box<[u8]>,
 
     cartridge: cartridge::Cartridge,
+    dma: dma::Dma,
 }
 
 impl Hardware {
@@ -41,6 +117,7 @@ impl Hardware {
             bios: bios,
 
             cartridge: cartridge::Cartridge::new(cart_rom),
+            dma: dma::Dma::new(),
         }
     }
 
@@ -136,6 +213,7 @@ impl Hardware {
                         //panic!("Attempting to write to line reg")
                     }
                     0x45 => self.gpu.write_line_match_reg(value),
+                    0x46 => self.dma.initiate(value),
                     0x47 => self.gpu.write_bg_palette_reg(value),
                     0x48 => self.gpu.write_obj_palette0_reg(value),
                     0x49 => self.gpu.write_obj_palette1_reg(value),
@@ -172,10 +250,19 @@ impl Hardware {
 
 impl Bus for Hardware {
     fn read(&self, addr: u16) -> u8 {
+        if self.dma.is_active() 
+            && !(mem_map::ZRAM_LO <= addr && addr < mem_map::ZRAM_HI) {
+            return 0xff;
+        }
         self.read_byte(addr)
     }
 
     fn write(&mut self, addr: u16, value: u8) {
+        if self.dma.is_active() 
+            && !(mem_map::ZRAM_LO <= addr && addr < mem_map::ZRAM_HI)
+            && addr != 0xff46 {
+            return;
+        }
         self.write_byte(addr, value)
     }
 
@@ -188,6 +275,15 @@ impl Bus for Hardware {
     }
 
     fn update(&mut self, cycles: u8) -> events::Events {
+        if self.dma.is_active() {
+            let (source, ofs, len) = self.dma.tick(cycles);
+
+            for i in ofs..ofs+len {
+                let value = self.read_byte(source + i);
+                self.gpu.write_oam(i, value);
+            }
+        }
+
         self.timer.tick(cycles, &mut self.int_controller);
 
         self.gpu.step(cycles, &mut self.int_controller)
