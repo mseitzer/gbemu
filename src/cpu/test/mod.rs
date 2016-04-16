@@ -9,6 +9,7 @@ mod test_misc;
 mod test_load;
 mod test_store;
 mod test_add;
+mod test_and;
 mod test_inc;
 mod test_dec;
 mod test_shift_rot;
@@ -202,6 +203,15 @@ fn test_opcodes() {
         (vec![0x7E], Op::ld8_ind { dest: A, src: Addr::HL }, None),
         (vec![0x7F], Op::ld8_rr { dest: A, src: A }, None),
 
+        (vec![0xA0], Op::and8_reg { src: B }, None),
+        (vec![0xA1], Op::and8_reg { src: C }, None),
+        (vec![0xA2], Op::and8_reg { src: D }, None),
+        (vec![0xA3], Op::and8_reg { src: E }, None),
+        (vec![0xA4], Op::and8_reg { src: H }, None),
+        (vec![0xA5], Op::and8_reg { src: L }, None),
+        (vec![0xA6], Op::and8_ind, None),
+        (vec![0xA7], Op::and8_reg { src: A }, None),
+
         (vec![0xC0], Op::ret_cond { cond: Condition::NZ }, None),
         (vec![0xC2, 0x01, 0xfc], Op::jp_cond { cond: Condition::NZ }, Imm16(0xfc01)),
         (vec![0xC3, 0xaa, 0xbb], Op::jp, Imm16(0xbbaa)),
@@ -224,6 +234,7 @@ fn test_opcodes() {
         (vec![0xDC, 0xff, 0x77], Op::call_cond { cond: Condition::C }, Imm16(0x77ff)),
         (vec![0xDF], Op::rst { target: 0x0018 }, None),
 
+        (vec![0xE6, 0x34], Op::and8_imm, Imm8(0x34)),
         (vec![0xE7], Op::rst { target: 0x0020 }, None),
         (vec![0xE9], Op::jp_ind, None),
         (vec![0xEF], Op::rst { target: 0x0028 }, None),
