@@ -16,6 +16,7 @@ mod test_inc;
 mod test_dec;
 mod test_shift_rot;
 mod test_control;
+mod test_swap;
 
 struct TestHardware {
     memory: Vec<u8>
@@ -262,6 +263,15 @@ fn test_opcodes() {
         (vec![0xF6, 0x35], Op::or8_imm, Imm8(0x35)),
         (vec![0xF7], Op::rst { target: 0x0030 }, None),
         (vec![0xFF], Op::rst { target: 0x0038 }, None),
+
+        (vec![0xCB, 0x30], Op::swap { src: B }, None),
+        (vec![0xCB, 0x31], Op::swap { src: C }, None),
+        (vec![0xCB, 0x32], Op::swap { src: D }, None),
+        (vec![0xCB, 0x33], Op::swap { src: E }, None),
+        (vec![0xCB, 0x34], Op::swap { src: H }, None),
+        (vec![0xCB, 0x35], Op::swap { src: L }, None),
+        (vec![0xCB, 0x36], Op::swap_ind, None),
+        (vec![0xCB, 0x37], Op::swap { src: A }, None),
     ];
 
     for (code, op, imm) in opcodes {
