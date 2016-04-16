@@ -10,6 +10,7 @@ mod test_load;
 mod test_store;
 mod test_add;
 mod test_and;
+mod test_xor;
 mod test_or;
 mod test_inc;
 mod test_dec;
@@ -212,6 +213,14 @@ fn test_opcodes() {
         (vec![0xA5], Op::and8_reg { src: L }, None),
         (vec![0xA6], Op::and8_ind, None),
         (vec![0xA7], Op::and8_reg { src: A }, None),
+        (vec![0xA8], Op::xor8_reg { src: B }, None),
+        (vec![0xA9], Op::xor8_reg { src: C }, None),
+        (vec![0xAA], Op::xor8_reg { src: D }, None),
+        (vec![0xAB], Op::xor8_reg { src: E }, None),
+        (vec![0xAC], Op::xor8_reg { src: H }, None),
+        (vec![0xAD], Op::xor8_reg { src: L }, None),
+        (vec![0xAE], Op::xor8_ind, None),
+        (vec![0xAF], Op::xor8_reg { src: A }, None),
 
         (vec![0xB0], Op::or8_reg { src: B }, None),
         (vec![0xB1], Op::or8_reg { src: C }, None),
@@ -247,6 +256,7 @@ fn test_opcodes() {
         (vec![0xE6, 0x34], Op::and8_imm, Imm8(0x34)),
         (vec![0xE7], Op::rst { target: 0x0020 }, None),
         (vec![0xE9], Op::jp_ind, None),
+        (vec![0xEE, 0x36], Op::xor8_imm, Imm8(0x36)),
         (vec![0xEF], Op::rst { target: 0x0028 }, None),
 
         (vec![0xF6, 0x35], Op::or8_imm, Imm8(0x35)),
