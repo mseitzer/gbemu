@@ -25,6 +25,7 @@ enum IntEnable {
 pub struct Cpu<B: Bus> {
     regs: Registers,
 
+    halted: bool,
     int_flag: bool,
     int_enable: IntEnable,
 
@@ -39,6 +40,7 @@ impl<B> Cpu<B> where B: Bus {
         Cpu {
             regs: Registers::new(),
 
+            halted: false,
             int_flag: false,
             int_enable: IntEnable::No,
 
@@ -50,6 +52,16 @@ impl<B> Cpu<B> where B: Bus {
     }
 
     pub fn step(&mut self) -> events::Events {
+        if self.halted {
+            if self.bus.has_irq() {
+                self.halted = false;
+                return events::Events::empty();
+            } else {
+                self.last_cycles = 1;
+                return self.handle_updates();
+            }
+        }
+
         match self.int_enable {
             IntEnable::No => {},
             IntEnable::Pending => {
@@ -87,7 +99,7 @@ impl<B> Cpu<B> where B: Bus {
 
         if self.int_flag && self.bus.has_irq() {
             if let Some(int) = self.bus.ack_irq() {
-                println!("Interrupt {:?} occured at {}, going to {:#06x}", int, self.total_cycles, int.isr_addr());
+                //println!("Interrupt {:?} occured at {}, going to {:#06x}", int, self.total_cycles, int.isr_addr());
 
                 self.int_flag = false;
 
@@ -130,7 +142,8 @@ impl<B> Cpu<B> where B: Bus {
                 // TODO: implement
             },
             Op::halt => {
-                // TODO: implement
+                self.halted = true;
+                println!("Starting to halt");
             },
             Op::di => {
                 self.int_enable = IntEnable::No;
