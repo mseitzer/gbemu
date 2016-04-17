@@ -415,6 +415,9 @@ for code in range(0, 256):
         src = ""
         cycles = 4
 
+    if op == "bit_ind":
+        cycles = 3
+
     if 0x4 <= hi <= 0xF:
         bit = (code & 0b00111000) >> 3
 

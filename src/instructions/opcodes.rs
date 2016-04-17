@@ -548,11 +548,11 @@ pub fn cycles(opcode: &Op) -> u8 {
         | rl {..} | rr {..} | sla {..} | sra {..} | swap {..} | srl {..} 
         | bit {..} | res {..} | set {..} => 2,
         ld16_imm {..} | inc8_ind | dec8_ind | st8_ind_imm | out8_imm 
-        | in8_imm | ld16_lea => 3,
+        | in8_imm | ld16_lea | bit_ind {..} => 3,
         push16 {..} | rst {..} | add8_sp_imm | st8_ind { dest: Addr::Imm, src: _ } 
         | ld8_ind { dest: _, src: Addr::Imm } | rlc_ind | rrc_ind 
         | rl_ind | rr_ind | sla_ind | sra_ind | swap_ind | srl_ind 
-        | bit_ind {..} | res_ind {..} | set_ind {..} => 4,
+        | res_ind {..} | set_ind {..} => 4,
         st16_sp => 5,
         _ => cycles_jmp(opcode, false)
     }
