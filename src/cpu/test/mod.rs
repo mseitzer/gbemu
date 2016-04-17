@@ -17,6 +17,7 @@ mod test_dec;
 mod test_shift_rot;
 mod test_control;
 mod test_swap;
+mod test_bits;
 
 struct TestHardware {
     memory: Vec<u8>
@@ -272,6 +273,74 @@ fn test_opcodes() {
         (vec![0xCB, 0x35], Op::swap { src: L }, None),
         (vec![0xCB, 0x36], Op::swap_ind, None),
         (vec![0xCB, 0x37], Op::swap { src: A }, None),
+
+        (vec![0xCB, 0x40], Op::bit { src: B, bit: 0 }, None),
+        (vec![0xCB, 0x41], Op::bit { src: C, bit: 0 }, None),
+        (vec![0xCB, 0x42], Op::bit { src: D, bit: 0 }, None),
+        (vec![0xCB, 0x43], Op::bit { src: E, bit: 0 }, None),
+        (vec![0xCB, 0x44], Op::bit { src: H, bit: 0 }, None),
+        (vec![0xCB, 0x45], Op::bit { src: L, bit: 0 }, None),
+        (vec![0xCB, 0x46], Op::bit_ind     { bit: 0 }, None),
+        (vec![0xCB, 0x47], Op::bit { src: A, bit: 0 }, None),
+        (vec![0xCB, 0x48], Op::bit { src: B, bit: 1 }, None),
+        (vec![0xCB, 0x49], Op::bit { src: C, bit: 1 }, None),
+        (vec![0xCB, 0x4A], Op::bit { src: D, bit: 1 }, None),
+        (vec![0xCB, 0x4B], Op::bit { src: E, bit: 1 }, None),
+        (vec![0xCB, 0x4C], Op::bit { src: H, bit: 1 }, None),
+        (vec![0xCB, 0x4D], Op::bit { src: L, bit: 1 }, None),
+        (vec![0xCB, 0x4E], Op::bit_ind     { bit: 1 }, None),
+        (vec![0xCB, 0x4F], Op::bit { src: A, bit: 1 }, None),
+
+        (vec![0xCB, 0x50], Op::bit { src: B, bit: 2 }, None),
+        (vec![0xCB, 0x51], Op::bit { src: C, bit: 2 }, None),
+        (vec![0xCB, 0x52], Op::bit { src: D, bit: 2 }, None),
+        (vec![0xCB, 0x53], Op::bit { src: E, bit: 2 }, None),
+        (vec![0xCB, 0x54], Op::bit { src: H, bit: 2 }, None),
+        (vec![0xCB, 0x55], Op::bit { src: L, bit: 2 }, None),
+        (vec![0xCB, 0x56], Op::bit_ind     { bit: 2 }, None),
+        (vec![0xCB, 0x57], Op::bit { src: A, bit: 2 }, None),
+        (vec![0xCB, 0x58], Op::bit { src: B, bit: 3 }, None),
+        (vec![0xCB, 0x59], Op::bit { src: C, bit: 3 }, None),
+        (vec![0xCB, 0x5A], Op::bit { src: D, bit: 3 }, None),
+        (vec![0xCB, 0x5B], Op::bit { src: E, bit: 3 }, None),
+        (vec![0xCB, 0x5C], Op::bit { src: H, bit: 3 }, None),
+        (vec![0xCB, 0x5D], Op::bit { src: L, bit: 3 }, None),
+        (vec![0xCB, 0x5E], Op::bit_ind     { bit: 3 }, None),
+        (vec![0xCB, 0x5F], Op::bit { src: A, bit: 3 }, None),
+
+        (vec![0xCB, 0x60], Op::bit { src: B, bit: 4 }, None),
+        (vec![0xCB, 0x61], Op::bit { src: C, bit: 4 }, None),
+        (vec![0xCB, 0x62], Op::bit { src: D, bit: 4 }, None),
+        (vec![0xCB, 0x63], Op::bit { src: E, bit: 4 }, None),
+        (vec![0xCB, 0x64], Op::bit { src: H, bit: 4 }, None),
+        (vec![0xCB, 0x65], Op::bit { src: L, bit: 4 }, None),
+        (vec![0xCB, 0x66], Op::bit_ind     { bit: 4 }, None),
+        (vec![0xCB, 0x67], Op::bit { src: A, bit: 4 }, None),
+        (vec![0xCB, 0x68], Op::bit { src: B, bit: 5 }, None),
+        (vec![0xCB, 0x69], Op::bit { src: C, bit: 5 }, None),
+        (vec![0xCB, 0x6A], Op::bit { src: D, bit: 5 }, None),
+        (vec![0xCB, 0x6B], Op::bit { src: E, bit: 5 }, None),
+        (vec![0xCB, 0x6C], Op::bit { src: H, bit: 5 }, None),
+        (vec![0xCB, 0x6D], Op::bit { src: L, bit: 5 }, None),
+        (vec![0xCB, 0x6E], Op::bit_ind     { bit: 5 }, None),
+        (vec![0xCB, 0x6F], Op::bit { src: A, bit: 5 }, None),
+
+        (vec![0xCB, 0x70], Op::bit { src: B, bit: 6 }, None),
+        (vec![0xCB, 0x71], Op::bit { src: C, bit: 6 }, None),
+        (vec![0xCB, 0x72], Op::bit { src: D, bit: 6 }, None),
+        (vec![0xCB, 0x73], Op::bit { src: E, bit: 6 }, None),
+        (vec![0xCB, 0x74], Op::bit { src: H, bit: 6 }, None),
+        (vec![0xCB, 0x75], Op::bit { src: L, bit: 6 }, None),
+        (vec![0xCB, 0x76], Op::bit_ind     { bit: 6 }, None),
+        (vec![0xCB, 0x77], Op::bit { src: A, bit: 6 }, None),
+        (vec![0xCB, 0x78], Op::bit { src: B, bit: 7 }, None),
+        (vec![0xCB, 0x79], Op::bit { src: C, bit: 7 }, None),
+        (vec![0xCB, 0x7A], Op::bit { src: D, bit: 7 }, None),
+        (vec![0xCB, 0x7B], Op::bit { src: E, bit: 7 }, None),
+        (vec![0xCB, 0x7C], Op::bit { src: H, bit: 7 }, None),
+        (vec![0xCB, 0x7D], Op::bit { src: L, bit: 7 }, None),
+        (vec![0xCB, 0x7E], Op::bit_ind     { bit: 7 }, None),
+        (vec![0xCB, 0x7F], Op::bit { src: A, bit: 7 }, None),
     ];
 
     for (code, op, imm) in opcodes {
