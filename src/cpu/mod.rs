@@ -143,7 +143,6 @@ impl<B> Cpu<B> where B: Bus {
             },
             Op::halt => {
                 self.halted = true;
-                println!("Starting to halt");
             },
             Op::di => {
                 self.int_enable = IntEnable::No;
@@ -673,7 +672,7 @@ impl<B> Cpu<B> where B: Bus {
                             value = value.wrapping_add(0xa0);
                         }
                     } else if self.regs.f.contains(HCARRY) {
-                        value += value.wrapping_add(0xfa);
+                        value = value.wrapping_add(0xfa);
                     }
                 }
                 self.regs.f.remove(HCARRY);
