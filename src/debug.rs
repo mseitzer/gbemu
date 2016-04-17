@@ -1,6 +1,6 @@
 use cpu;
 use hardware;
-use gpu;
+use gpu::{self, Color, SCREEN_WIDTH};
 use instructions::Instr;
 use cpu::debug::DebugInfo;
 
@@ -26,13 +26,11 @@ fn print_instr(addr: u16, instr: &Instr) {
 pub fn print_framebuffer(framebuffer: &gpu::Framebuffer) {
     for i in 0..144 {
         for j in 0..160 {
-            let color = framebuffer[(i*160+j)*3];
-            let ch = match color {
-                0x00 => '■',
-                0x60 => '▩',
-                0xc0 => '▥',
-                0xFF => ' ',
-                _    => ' ',
+            let ch = match framebuffer[i*SCREEN_WIDTH+j] {
+                Color::Black => '■',
+                Color::DarkGray => '▩',
+                Color::LightGray => '▥',
+                Color::White => ' ',
             };
             print!("{}", ch);
         }

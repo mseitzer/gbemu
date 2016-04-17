@@ -1,4 +1,4 @@
-use std::cmp;
+use std::cmp::{self, Ordering};
 use super::int_controller::{Interrupt, IntController};
 use events;
 
@@ -15,7 +15,7 @@ const TILE_HEIGHT:          usize = 8;
 const TILE_DATA0_OFS:       usize = 256;
 const OAM_ENTRY_SIZE:       usize = 4;
 
-pub type Framebuffer = [u8; SCREEN_WIDTH * SCREEN_HEIGHT * 3];
+pub type Framebuffer = [Color; SCREEN_WIDTH * SCREEN_HEIGHT];
 
 #[derive(Copy, Clone, Debug)]
 struct Tile {
@@ -38,21 +38,21 @@ impl Tile {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
-enum Color {
-    WHITE,
-    LIGHT_GRAY,
-    DARK_GRAY,
-    BLACK,
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Color {
+    White,
+    LightGray,
+    DarkGray,
+    Black,
 }
 
 impl Color {
-    fn to_rgb(&self) -> (u8, u8, u8) {
+    pub fn to_rgb(&self) -> (u8, u8, u8) {
         match *self {
-            Color::WHITE        => (0xff, 0xff, 0xff),
-            Color::LIGHT_GRAY   => (0xc0, 0xc0, 0xc0),
-            Color::DARK_GRAY    => (0x60, 0x60, 0x60),
-            Color::BLACK        => (0x00, 0x00, 0x00)
+            Color::White       => (0xff, 0xff, 0xff),
+            Color::LightGray   => (0xc0, 0xc0, 0xc0),
+            Color::DarkGray    => (0x60, 0x60, 0x60),
+            Color::Black       => (0x00, 0x00, 0x00)
         }
     }
 }
@@ -71,7 +71,7 @@ impl Palette {
 
     fn get_color(&self, color_id: u8) -> Color {
         use self::Color::*;
-        const colors: [Color; 4] = [WHITE, LIGHT_GRAY, DARK_GRAY, BLACK];
+        const colors: [Color; 4] = [White, LightGray, DarkGray, Black];
         
         match color_id & 0b11 {
             0b00 => colors[ (self.data & 0b11) as usize],
@@ -206,7 +206,7 @@ impl Gpu {
 
             oam: [Sprite::new(); NUM_SPRITES],
 
-            framebuffer: [0; SCREEN_WIDTH * SCREEN_HEIGHT * 3],
+            framebuffer: [Color::White; SCREEN_WIDTH * SCREEN_HEIGHT],
         }
     }
 
@@ -283,13 +283,6 @@ impl Gpu {
         self.mode = mode;
     }
 
-    fn write_framebuffer(&mut self, x: usize, y: usize, color: Color) {
-        let (r, g, b) = color.to_rgb();
-        self.framebuffer[(y * SCREEN_WIDTH + x) * 3] = r;
-        self.framebuffer[(y * SCREEN_WIDTH + x) * 3 + 1] = g;
-        self.framebuffer[(y * SCREEN_WIDTH + x) * 3 + 2] = b;
-    }
-
     fn get_tile(&self, x: usize, y: usize, use_map1: bool) -> Tile {
         let idx = (y / TILE_HEIGHT) * TILES_IN_SCREEN + x / TILE_WIDTH;
         let tile_idx = if use_map1 {
@@ -312,102 +305,120 @@ impl Gpu {
             let x_ofs = (start_x+i) as usize % TILE_WIDTH;
             let color_code = tile.get_color_code(x_ofs, y_ofs);
             let color = palette.get_color(color_code);
-            let line = self.line as usize;
-            self.write_framebuffer(start_x+i, line, color);
+            let idx = self.line as usize * SCREEN_WIDTH + start_x + i;
+            self.framebuffer[idx] = color;
         }
     }
 
     fn render_line(&mut self) {
+        let mut bg_prio = [false; SCREEN_WIDTH];
+
         if self.lcdc_reg.contains(SHOW_BG) {
             let y = self.line;
-            let mut x = 0;
-            while x < SCREEN_WIDTH {
+            for x in 0..SCREEN_WIDTH {
                 let bg_x = (self.scroll_x as usize + x as usize) % BG_WIDTH;
                 let bg_y = (self.scroll_y as usize + y as usize) % BG_HEIGHT;
                 let y_ofs = bg_y % TILE_HEIGHT;
 
-                let mut len = ((bg_x + 8) & !0b111) - bg_x;
-                if x + len >= SCREEN_WIDTH {
-                    len = SCREEN_WIDTH - x;
-                }
-
                 let use_map1 = self.lcdc_reg.contains(BG_TILE_MAP);
                 let tile = self.get_tile(bg_x, bg_y, use_map1);
                 let palette = self.bg_palette;
-                self.write_tile_line(&tile, palette, y_ofs, x, len);
-                x += len;
+
+                let x_ofs = x % TILE_WIDTH;
+                let color_code = tile.get_color_code(x_ofs, y_ofs);
+                let color = palette.get_color(color_code);
+                let idx = self.line as usize * SCREEN_WIDTH + x;
+                bg_prio[x] = color != Color::White;
+                self.framebuffer[idx] = color;
             }
         }
 
         if self.lcdc_reg.contains(SHOW_WINDOW) && self.line >= self.window_y {
             let y = self.line;
-            let mut x = cmp::max(self.window_x as i32 - 7, 0) as usize;
-            while x < SCREEN_WIDTH {
+            let start_x = cmp::max(self.window_x as i32 - 7, 0) as usize;
+            for x in start_x..SCREEN_WIDTH {
                 let wnd_x = (self.scroll_x as usize + x as usize) % BG_WIDTH;
                 let wnd_y = (self.scroll_y as usize + y as usize) % BG_HEIGHT;
                 let y_ofs = wnd_y % TILE_HEIGHT;
                 
-                let mut len = ((wnd_x + 8) & !0b111) - wnd_x;
-                if x + len >= SCREEN_WIDTH {
-                    len = SCREEN_WIDTH - x;
-                }
-                
                 let use_map1 = self.lcdc_reg.contains(WINDOW_TILE_MAP);
                 let tile = self.get_tile(wnd_x, wnd_y, use_map1);
                 let palette = self.bg_palette;
-                self.write_tile_line(&tile, palette, y_ofs, x, len);
-                x += len;
+
+                let x_ofs = x % TILE_WIDTH;
+                let color_code = tile.get_color_code(x_ofs, y_ofs);
+                let color = palette.get_color(color_code);
+                let idx = self.line as usize * SCREEN_WIDTH + x;
+                bg_prio[x] = color != Color::White;
+                self.framebuffer[idx] = color;
             }
         }
 
         if self.lcdc_reg.contains(SHOW_SPRITES) {
-            let sprite_width = if self.lcdc_reg.contains(WIDE_SPRITES) { 16 }
-                               else { 8 };
-            let mut idx = 0;
-            while idx < self.oam.len() {
-                let sprite = self.oam[idx];
+            let framebuffer = &mut self.framebuffer;
+            let sprite_height = if self.lcdc_reg.contains(WIDE_SPRITES) { 16 }
+                                else { 8 };
+            let line = self.line;
+            let mut sprites: Vec<(usize, &Sprite)> = self.oam.iter()
+                         .filter(|sprite| {
+                            let y = sprite.y as i32 - 16;
+                            y <= line as i32 && y + sprite_height > line as i32
+                         })
+                         .take(10)
+                         .enumerate()
+                         .collect();
+
+            sprites.sort_by(|&(a_index, a), &(b_index, b)| {
+                let order = a.x.cmp(&b.x);
+                if let Ordering::Equal = order {
+                    a_index.cmp(&b_index).reverse()
+                } else {
+                    order.reverse()
+                }
+            });
+
+            for (_, sprite) in sprites {
+                let sprite_x = sprite.x.wrapping_sub(8);
+                //let start_x = cmp::max(sprite_x, 0);
+
+                let palette = if sprite.flags.contains(PALETTE1) {
+                    self.obj_palette1
+                } else {
+                    self.obj_palette0
+                };
+
                 let y = sprite.y as i32 - 16;
-                if y <= self.line as i32 && y + 8 > self.line as i32 {
-                    let sprite_x = sprite.x as i32 - 8;
-                    let start_x = cmp::max(sprite_x, 0);
-                    let end_x = cmp::min(sprite_x+sprite_width, SCREEN_WIDTH as i32);
-                    
-                    let palette = if sprite.flags.contains(PALETTE1) {
-                        self.obj_palette1
-                    } else {
-                        self.obj_palette0
-                    };
+                let y_ofs = if sprite.flags.contains(Y_FLIP) {
+                    (sprite_height - 1 - (self.line as i32 - y)) as usize
+                } else {
+                    (self.line as i32 - y) as usize
+                };
 
-                    let y_ofs = if sprite.flags.contains(Y_FLIP) {
-                        TILE_HEIGHT - 1 - (self.line as i32 - y) as usize
-                    } else {
-                        (self.line as i32 - y) as usize
-                    };
+                let tile = if y_ofs < 8 {
+                    self.tiles[sprite.tile_idx as usize]
+                } else {
+                    self.tiles[(sprite.tile_idx+1) as usize]
+                };
 
-                    for x in start_x..end_x {
-                        let x_ofs = if sprite.flags.contains(X_FLIP) {
-                            sprite_width - 1 - (x % sprite_width)
-                        } else {
-                            x % sprite_width
-                        };
+                for x in (0..TILE_WIDTH).rev() {
+                    let x_pos = sprite_x.wrapping_add(x as u8) as usize;
+                    if x_pos >= SCREEN_WIDTH {
+                        continue;
+                    }
 
-                        let tile = if sprite_width == 8 {
-                            self.tiles[sprite.tile_idx as usize]
-                        } else if sprite_width == 16 && x_ofs < 8 {
-                            self.tiles[(sprite.tile_idx & !0b1) as usize]
-                        } else {
-                            self.tiles[((sprite.tile_idx & !0b1) + 1) as usize]
-                        };
+                    let x_ofs = if sprite.flags.contains(X_FLIP) {
+                        (TILE_WIDTH - 1 - x) as usize
+                    } else { x as usize };
 
-                        let color_code = tile.get_color_code(
-                            (x_ofs % 8) as usize, y_ofs)
-                        ;
-                        let color = palette.get_color(color_code);
-                        let line = self.line as usize;
-                        self.write_framebuffer(x as usize, line, color);
+                    let color_code = tile.get_color_code(
+                        x_ofs, y_ofs % TILE_HEIGHT
+                    );
+                    let color = palette.get_color(color_code);
+                    let idx = self.line as usize * SCREEN_WIDTH + x_pos;
+                    if !sprite.flags.contains(BG_PRIO) || !bg_prio[x_pos] {
+                        framebuffer[idx] = color;
                     }
                 }
-                idx += 1;
             }
         }
     }
@@ -577,10 +588,10 @@ impl Gpu {
                 let color_code = tile.get_color_code(j, i);
                 let color = palette.get_color(color_code);
                 let ch = match color {
-                    Color::BLACK => '■',
-                    Color::DARK_GRAY => '▩',
-                    Color::LIGHT_GRAY => '▥',
-                    Color::WHITE => ' ',
+                    Color::Black => '■',
+                    Color::DarkGray => '▩',
+                    Color::LightGray => '▥',
+                    Color::White => ' ',
                 };
                 print!("{}", ch);
             }
@@ -592,13 +603,11 @@ impl Gpu {
     fn print_framebuffer(&self) {
         for i in 0..SCREEN_HEIGHT {
             for j in 0..SCREEN_WIDTH {
-                let color = self.framebuffer[(i*SCREEN_WIDTH+j)*3];
-                let ch = match color {
-                    0x00 => '■',
-                    0x60 => '▩',
-                    0xc0 => '▥',
-                    0xFF => ' ',
-                    _    => ' ',
+                let ch = match self.framebuffer[i*SCREEN_WIDTH+j] {
+                    Color::Black => '■',
+                    Color::DarkGray => '▩',
+                    Color::LightGray => '▥',
+                    Color::White => ' ',
                 };
                 print!("{}", ch);
             }

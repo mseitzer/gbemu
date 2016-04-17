@@ -34,10 +34,10 @@ impl Frontend {
             for y in 0..SCREEN_HEIGHT {
                 for x in 0..SCREEN_WIDTH {
                     let ofs = y*pitch + x*3;
-                    let fb_ofs = (y*SCREEN_WIDTH + x)*3;
-                    buffer[ofs+0] = framebuffer[fb_ofs+0];
-                    buffer[ofs+1] = framebuffer[fb_ofs+1];
-                    buffer[ofs+2] = framebuffer[fb_ofs+2];
+                    let (r, g, b) = framebuffer[y*SCREEN_WIDTH + x].to_rgb();
+                    buffer[ofs+0] = r;
+                    buffer[ofs+1] = g;
+                    buffer[ofs+2] = b;
                 }
             }
         }).unwrap();
@@ -137,8 +137,8 @@ impl Frontend {
             Keycode::Left   => Some(joypad::Key::Left),
             Keycode::Down   => Some(joypad::Key::Down),
             Keycode::Up     => Some(joypad::Key::Up),
-            Keycode::A      => Some(joypad::Key::Right),
-            Keycode::D      => Some(joypad::Key::Left),
+            Keycode::A      => Some(joypad::Key::Left),
+            Keycode::D      => Some(joypad::Key::Right),
             Keycode::S      => Some(joypad::Key::Down),
             Keycode::W      => Some(joypad::Key::Up),
             Keycode::F      => Some(joypad::Key::A),
