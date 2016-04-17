@@ -226,13 +226,9 @@ impl Gpu {
 
                 if next_line == 144 {
                     self.update_mode(VBlank, int_controller);
-                    
-                    
+                         
                     if self.lcdc_reg.contains(DISPLAY_ENABLED) {
                         events = events::RENDER;
-                        //let palette = Palette { data: 0xfc };
-                        //Gpu::print_tile(self.tiles[1], palette);
-                        //self.print_framebuffer();
                     }
                 } else {
                     self.update_mode(ScanlineOAM, int_controller);
@@ -271,7 +267,7 @@ impl Gpu {
 
     fn update_mode(&mut self, mode: GpuMode, int_controller: &mut IntController) {
         use self::GpuMode::*;
-
+        
         match mode {
             HBlank if self.stat_reg.contains(HBLANK_INT) => 
                 int_controller.set_int_pending(Interrupt::LCDCStatus),
@@ -494,7 +490,6 @@ impl Gpu {
     }
 
     pub fn write_stat_reg(&mut self, value: u8) {
-        self.mode = GpuMode::from_bits(value);
         self.stat_reg = StatFlags::from_bits_truncate(value & 0xFC);
     }
 
