@@ -62,22 +62,26 @@ mod dma {
                 state @ _ => state
             };
             
-            if let Copying = new_state {
-                let ofs = self.clock.saturating_sub(1) as u16;
-                let len = match self.state {
-                    Requested | Starting => (new_clock - 1 - self.clock) as u16,
-                    Ending | Inactive => 160 - ofs, // Copy only the remaining bytes
-                    _ => (new_clock - self.clock) as u16,
-                };
+            let res = match new_state {
+                Copying => {
+                    let ofs = self.clock.saturating_sub(1) as u16;
+                    let len = match self.state {
+                        Requested | Starting => (new_clock - 1 - self.clock) as u16,
+                        _ => (new_clock - self.clock) as u16,
+                    };
+                    (self.source, ofs, len)
+                },
+                Ending | Inactive => {
+                    let ofs = self.clock.saturating_sub(1) as u16;
+                    let len = 160u16.saturating_sub(ofs);
+                    (self.source, ofs, len)
+                },
+                _ => (0, 0, 0)
+            };
 
-                self.state = new_state;
-                self.clock = new_clock;
-                (self.source, ofs, len)
-            } else {
-                self.state = new_state;
-                self.clock = new_clock;
-                (0, 0, 0)
-            }
+            self.state = new_state;
+            self.clock = new_clock;
+            res
         }
     }
 }
@@ -213,7 +217,9 @@ impl Hardware {
                         //panic!("Attempting to write to line reg")
                     }
                     0x45 => self.gpu.write_line_match_reg(value),
-                    0x46 => self.dma.initiate(value),
+                    0x46 => {
+                        self.dma.initiate(value);
+                    },
                     0x47 => self.gpu.write_bg_palette_reg(value),
                     0x48 => self.gpu.write_obj_palette0_reg(value),
                     0x49 => self.gpu.write_obj_palette1_reg(value),
@@ -227,7 +233,7 @@ impl Hardware {
                     0x0f => self.int_controller.write_pending_reg(value),
                     0xff => self.int_controller.write_enabled_reg(value),
 
-                    _ => {}//println!("Output action {:#04x} not implemented", a)
+                    _ => {}//println!("Output action {:#04x} not implemented", a)},
                 }
             }
             //_ => panic!("Write to non-writeable memory region detected! ({:#06x})",
