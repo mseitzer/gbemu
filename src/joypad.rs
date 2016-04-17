@@ -60,7 +60,7 @@ impl Joypad {
     pub fn new() -> Joypad {
         Joypad {
             keys_pressed: [KeysPressed::empty(); 2],
-            active_column: 0
+            active_column: 2
         }
     }
 
@@ -77,8 +77,7 @@ impl Joypad {
         let val = match self.active_column {
             0 => 0b100000 | (!self.keys_pressed[0].bits & 0b1111),
             1 => 0b010000 | (!self.keys_pressed[1].bits & 0b1111),
-            2 => (!self.keys_pressed[0].bits & 0b1111)
-               | (!self.keys_pressed[1].bits & 0b1111),
+            2 => !(self.keys_pressed[0].bits | self.keys_pressed[1].bits) & 0b1111,
             3 => 0b111111,
             _ => unreachable!()
         };
