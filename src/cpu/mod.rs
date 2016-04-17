@@ -553,16 +553,16 @@ impl<B> Cpu<B> where B: Bus {
             /* Bit operation instructions */
             Op::bit { src, bit } => {
                 let value = self.regs.read8(src);
-                self.regs.f = self.regs.f | HCARRY |
-                             ZERO.test(get_bit!(value, bit) == 0);
-                self.regs.f.remove(SUB);
+                self.regs.f = ZERO.test(get_bit!(value, bit) == 0) |
+                              HCARRY |
+                              CARRY.test(self.regs.f.contains(CARRY));
             },
             Op::bit_ind { bit } => {
                 let addr = self.regs.read16(Reg16::HL);
                 let value = self.bus.read(addr);
-                self.regs.f = self.regs.f | HCARRY |
-                             ZERO.test(get_bit!(value, bit) == 0);
-                self.regs.f.remove(SUB);
+                self.regs.f = ZERO.test(get_bit!(value, bit) == 0) |
+                              HCARRY |
+                              CARRY.test(self.regs.f.contains(CARRY));
             },
             Op::set { src, bit } => {
                 let value = self.regs.read8(src);
