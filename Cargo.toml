@@ -3,6 +3,6 @@ name = "gbemu"
 version = "0.1.0"
 
 [dependencies]
-bitflags = "0.5.0"
-getopts = "0.2.14"
+argparse = "0.2.1"
+bitflags = "0.7.0"
 sdl2 = "0.17.0"

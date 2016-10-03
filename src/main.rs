@@ -1,52 +1,53 @@
 #[macro_use]
 extern crate bitflags;
-extern crate getopts;
+extern crate argparse;
 extern crate sdl2;
 
-use getopts::Options;
+use argparse::{ArgumentParser, Store, StoreTrue};
 use std::io::prelude::*;
-use std::env;
 use std::error::Error;
 use std::fs::File;
 
 #[macro_use]
 mod util;
-mod gameboy;
-mod frontend;
+
+mod cartridge;
 mod cpu;
-mod hardware;
-mod mem_map;
-mod memory;
-mod gpu;
-mod timer;
-mod int_controller;
-mod instructions;
 mod debug;
 mod events;
-mod cartridge;
+mod frontend;
+mod gameboy;
+mod gpu;
+mod hardware;
+mod instructions;
+mod int_controller;
 mod joypad;
+mod mem_map;
+mod memory;
+mod timer;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    let mut opts = Options::new();
-    opts.optflag("d", "debug", "Starts the emulator in debug mode");
-
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
-        Err(f) => { panic!(f.to_string()) }
-    };
-
-    if matches.free.is_empty() {
-        println!("Need an input file!");
-        return;
+    let mut debug_mode = false;
+    let mut bios_path = String::from("rom.bin");
+    let mut rom_path = String::new();
+    
+    {
+        let mut ap = ArgumentParser::new();
+        ap.set_description("GBEmu - A Gameboy emulator");
+        ap.refer(&mut debug_mode)
+            .add_option(&["-d", "--debug"], StoreTrue, "Start in debug mode");
+        ap.refer(&mut bios_path)
+            .add_option(&["--bios"], Store, "Path to Gameboy BIOS");
+        ap.refer(&mut rom_path)
+            .add_argument("ROM Path", Store, "Path to the ROM to emulate")
+            .required();
+        ap.parse_args_or_exit();
     }
 
-    let rom_path = matches.free[0].clone();
     let rom_buf = read_file(rom_path);
-    let bios_buf = read_file("rom.bin".to_string());
+    let bios_buf = read_file(bios_path);
 
-    if matches.opt_present("d") {
+    if debug_mode {
         debug::start(bios_buf, rom_buf);
     } else {
         let mut gb = gameboy::Gameboy::new(bios_buf, rom_buf);
