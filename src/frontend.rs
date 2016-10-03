@@ -2,9 +2,9 @@ use sdl2;
 use sdl2::pixels::{PixelFormatEnum, Color};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::render::{Texture, TextureAccess, BlendMode};
+use sdl2::render::Texture;
 use time::{Duration, SteadyTime};
-use std::thread;
+use std::{thread, time};
 
 use gameboy::Gameboy;
 use events;

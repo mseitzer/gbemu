@@ -1,11 +1,10 @@
 use std::fmt;
 
-use hardware::{self, Bus};
-use int_controller::Interrupt;
-use mem_map;
+use hardware::Bus;
 use events;
 use instructions;
-use instructions::{Instr, Immediate, Op, Condition, Addr, Reg8, Reg16};
+use instructions::{Instr, Op, Condition, Addr, Reg8, Reg16};
+use mem_map;
 
 mod registers;
 mod instr_impl;
@@ -13,7 +12,7 @@ pub mod debug;
 #[cfg(test)]
 mod test;
 
-use self::registers::{Registers, Flags, ZERO, SUB, CARRY, HCARRY};
+use self::registers::{Registers, SUB, ZERO, CARRY, HCARRY};
 
 #[cfg_attr(test, derive(Eq, PartialEq, Debug))]
 enum IntEnable {
@@ -95,12 +94,8 @@ impl<B> Cpu<B> where B: Bus {
     }
 
     fn handle_interrupts(&mut self) {
-        use super::int_controller::Interrupt::*;
-
         if self.int_flag && self.bus.has_irq() {
             if let Some(int) = self.bus.ack_irq() {
-                //println!("Interrupt {:?} occured at {}, going to {:#06x}", int, self.total_cycles, int.isr_addr());
-
                 self.int_flag = false;
 
                 let pc = self.regs.pc;
@@ -132,8 +127,6 @@ impl<B> Cpu<B> where B: Bus {
     }
 
     fn execute_instr(&mut self, instr: Instr) {
-        use instructions::Immediate::{Imm8, Imm16};
-
         let mut jumped = false;
 
         match instr.op {
@@ -770,14 +763,6 @@ impl<B> Cpu<B> where B: Bus {
 
     pub fn total_cycles(&self) -> u64 {
         self.total_cycles
-    }
-
-    pub fn last_m_cycles(&self) -> u8 {
-        self.last_cycles
-    }
-
-    pub fn last_c_cycles(&self) -> u8 {
-        self.last_cycles * 4
     }
 
     pub fn hardware(&mut self) -> &mut B {

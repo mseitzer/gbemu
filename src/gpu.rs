@@ -71,13 +71,13 @@ impl Palette {
 
     fn get_color(&self, color_id: u8) -> Color {
         use self::Color::*;
-        const colors: [Color; 4] = [White, LightGray, DarkGray, Black];
+        const COLORS: [Color; 4] = [White, LightGray, DarkGray, Black];
         
         match color_id & 0b11 {
-            0b00 => colors[ (self.data & 0b11) as usize],
-            0b01 => colors[((self.data & 0b1100) >> 2) as usize],
-            0b10 => colors[((self.data & 0b110000) >> 4) as usize],
-            0b11 => colors[((self.data & 0b11000000) >> 6) as usize],
+            0b00 => COLORS[ (self.data & 0b11) as usize],
+            0b01 => COLORS[((self.data & 0b1100) >> 2) as usize],
+            0b10 => COLORS[((self.data & 0b110000) >> 4) as usize],
+            0b11 => COLORS[((self.data & 0b11000000) >> 6) as usize],
             _    => unreachable!()
         }
     }
@@ -120,6 +120,7 @@ enum GpuMode {
 }
 
 impl GpuMode {
+    #[allow(dead_code)]
     fn from_bits(value: u8) -> GpuMode {
         match value & 0b11 {
             0b00 => GpuMode::HBlank,
@@ -146,6 +147,7 @@ bitflags! {
 
 bitflags! {
     flags StatFlags: u8 {
+        #[allow(dead_code)]
         const LINE_MATCH        = 1 << 2,
         const HBLANK_INT        = 1 << 3,
         const VBLANK_INT        = 1 << 4,
@@ -299,17 +301,6 @@ impl Gpu {
         }
     }
 
-    fn write_tile_line(&mut self, tile: &Tile, palette: Palette, 
-                       y_ofs: usize, start_x: usize, len: usize) {
-        for i in 0..len {
-            let x_ofs = (start_x+i) as usize % TILE_WIDTH;
-            let color_code = tile.get_color_code(x_ofs, y_ofs);
-            let color = palette.get_color(color_code);
-            let idx = self.line as usize * SCREEN_WIDTH + start_x + i;
-            self.framebuffer[idx] = color;
-        }
-    }
-
     fn render_line(&mut self) {
         let mut bg_prio = [false; SCREEN_WIDTH];
 
@@ -379,7 +370,6 @@ impl Gpu {
 
             for (_, sprite) in sprites {
                 let sprite_x = sprite.x.wrapping_sub(8);
-                //let start_x = cmp::max(sprite_x, 0);
 
                 let palette = if sprite.flags.contains(PALETTE1) {
                     self.obj_palette1
@@ -581,7 +571,9 @@ impl Gpu {
         self.window_x = value;
     }
 
+    // Debugging helpers
 
+    #[allow(dead_code)]
     fn print_tile(tile: Tile, palette: Palette) {
         for i in 0..TILE_HEIGHT {
             for j in 0..TILE_WIDTH {
@@ -600,6 +592,7 @@ impl Gpu {
         print!("\n");
     }
     
+    #[allow(dead_code)]
     fn print_framebuffer(&self) {
         for i in 0..SCREEN_HEIGHT {
             for j in 0..SCREEN_WIDTH {

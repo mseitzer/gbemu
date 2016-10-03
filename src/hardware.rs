@@ -185,8 +185,8 @@ impl Hardware {
         use mem_map::Addr::*;
 
         match mem_map::map_address(addr) {
-            ROMBank0(a) => self.cartridge.write(addr, value),
-            ROMBank1(a) => self.cartridge.write(addr, value),
+            ROMBank0(_) => self.cartridge.write(addr, value),
+            ROMBank1(_) => self.cartridge.write(addr, value),
             TileData(a) => self.gpu.write_tile_data(a, value),
             TileMap1(a) => self.gpu.write_tile_map1(a, value),
             TileMap2(a) => self.gpu.write_tile_map2(a, value),

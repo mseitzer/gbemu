@@ -1,5 +1,4 @@
 
-
 #[derive(Copy, Clone, Debug)]
 pub enum Interrupt {
     VBlank          = 1 << 0,
@@ -34,10 +33,15 @@ impl Interrupt {
 
 bitflags! {
     flags InterruptFlags: u8 {
+        #[allow(dead_code)]
         const INT_VBLANK            = 1 << 0,
+        #[allow(dead_code)]
         const INT_LCDCSTATUS        = 1 << 1,
+        #[allow(dead_code)]
         const INT_TIMER             = 1 << 2,
+        #[allow(dead_code)]
         const INT_SERIAL_TRANSFER   = 1 << 3,
+        #[allow(dead_code)]
         const INT_JOYPAD            = 1 << 4
     }
 }
@@ -80,7 +84,6 @@ impl IntController {
     }
 
     pub fn set_int_pending(&mut self, int: Interrupt) {
-        //println!("Int Controller: Registered int {:?}", int);
         let flag = InterruptFlags::from_bits_truncate(int as u8);
         self.ints_pending = self.ints_pending | flag
     }

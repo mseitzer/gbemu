@@ -1,8 +1,5 @@
-use instructions;
-use instructions::{Instr, Op, Reg8, Reg16};
-use mem_map;
 use hardware::Bus;
-use super::registers::{Registers, ZERO, SUB, HCARRY, CARRY};
+use super::registers::{ZERO, CARRY};
 
 impl<B> super::Cpu<B> where B: Bus {
     #[inline(always)]

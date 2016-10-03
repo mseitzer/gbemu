@@ -35,7 +35,9 @@ pub enum Addr {
     HLI,
     HLD,
     Imm,
+    #[allow(dead_code)]
     IO,
+    #[allow(dead_code)]
     IOC
 }
 

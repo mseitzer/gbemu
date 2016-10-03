@@ -5,7 +5,6 @@ extern crate sdl2;
 extern crate time;
 
 use getopts::Options;
-use std::io;
 use std::io::prelude::*;
 use std::env;
 use std::error::Error;
