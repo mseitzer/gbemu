@@ -2,7 +2,6 @@
 extern crate bitflags;
 extern crate getopts;
 extern crate sdl2;
-extern crate time;
 
 use getopts::Options;
 use std::io::prelude::*;

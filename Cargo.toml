@@ -5,5 +5,4 @@ version = "0.1.0"
 [dependencies]
 bitflags = "0.5.0"
 getopts = "0.2.14"
-time = "0.1.35"
 sdl2 = "0.17.0"

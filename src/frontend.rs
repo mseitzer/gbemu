@@ -3,8 +3,8 @@ use sdl2::pixels::{PixelFormatEnum, Color};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::render::Texture;
-use time::{Duration, SteadyTime};
-use std::{thread, time};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use gameboy::Gameboy;
 use events;
@@ -64,12 +64,12 @@ impl Frontend {
         let mut event_pump = self.context.event_pump().unwrap();
 
         let turbo = false;
-        let frame_duration = Duration::seconds(1) / 60;
+        let frame_duration = Duration::from_secs(1) / 60;
         let mut emu_cycles: u64 = 0;
-        let mut last_time = SteadyTime::now();
+        let mut last_time = Instant::now();
         let mut target_time = last_time + frame_duration;
         'main: loop {
-            let now = SteadyTime::now();
+            let now = Instant::now();
             let delta = now - last_time;
             last_time = now;
             target_time = target_time + frame_duration;
@@ -102,7 +102,7 @@ impl Frontend {
                 // Simulate as many cycles as needed for approx. 1M instructions 
                 // to be executed in a second. This is adapted depending on how
                 // long it takes to execute the instructions plus rendering a frame.
-                (delta * (4194304 / 4)).num_seconds() as u64
+                (delta * (4194304 / 4)).as_secs()
             };
 
             loop {
@@ -122,10 +122,9 @@ impl Frontend {
             renderer.present();
 
             if !turbo {
-                let now = SteadyTime::now();
+                let now = Instant::now();
                 if now < target_time {
-                    let delta = (target_time - now).num_milliseconds() as u32;
-                    thread::sleep_ms(delta);
+                    thread::sleep(target_time - now);
                 }
             }
         }
