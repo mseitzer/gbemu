@@ -1,6 +1,6 @@
 use super::{run_test, test_instr};
-use cpu::registers::{Flags, ZERO, SUB, HCARRY, CARRY};
-use instructions::{Instr, Reg8, Reg16, Immediate, Op};
+use cpu::registers::{ZERO, SUB, HCARRY, CARRY};
+use instructions::{Instr, Reg8, Immediate, Op};
 
 #[test]
 fn test_nop() {

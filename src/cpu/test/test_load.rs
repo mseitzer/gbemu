@@ -1,7 +1,7 @@
 use hardware::Bus;
-use super::super::Cpu;
-use super::{TestHardware, run_test, test_instr};
 use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
+use super::super::Cpu;
+use super::{TestHardware, test_instr};
 
 #[test]
 fn test_immediate_load8() {

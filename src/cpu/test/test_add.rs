@@ -1,7 +1,6 @@
-use hardware::Bus;
 use cpu::registers::{Flags, ZERO, SUB, HCARRY, CARRY};
-use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
-use super::{TestHardware, run_test, test_instr};
+use instructions::{Instr, Reg16, Immediate, Op};
+use super::test_instr;
 
 fn add16_helper(src: Reg16, value1: u16, value2: u16) {
     let op = Op::add16_reg { src: src };

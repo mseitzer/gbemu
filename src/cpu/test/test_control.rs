@@ -1,8 +1,8 @@
 use hardware::Bus;
 use cpu::IntEnable;
-use cpu::registers::{Flags, ZERO, SUB, HCARRY, CARRY};
-use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr, Condition};
-use super::{TestHardware, run_test, test_instr};
+use cpu::registers::{Flags, ZERO, CARRY};
+use instructions::{Instr, Reg16, Immediate, Op, Condition};
+use super::test_instr;
 
 fn conditions() -> [(Condition, Flags, Flags); 4] {
     [(Condition::NZ, Flags::empty(), ZERO),
@@ -124,8 +124,8 @@ fn jp_cond_helper(pc: u16, target: u16, cond: Condition, flags: Flags) {
 fn test_jp_cond() {
     // JP Cond, Imm16
     for &(cond, flag_true, flag_false) in conditions().iter() {
-        jp_rel_cond_helper(0x1000, 0x444, cond, flag_false);
-        jp_rel_cond_helper(0x2000, 0xffff, cond, flag_true);
+        jp_cond_helper(0x1000, 0x4444, cond, flag_false);
+        jp_cond_helper(0x2000, 0xffff, cond, flag_true);
     }
 }
 

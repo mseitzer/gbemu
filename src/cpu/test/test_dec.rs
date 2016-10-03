@@ -1,7 +1,7 @@
 use hardware::Bus;
 use cpu::registers::{Flags, ZERO, SUB, HCARRY, CARRY};
-use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
-use super::{TestHardware, run_test, test_instr};
+use instructions::{Instr, Reg8, Reg16, Immediate, Op,};
+use super::test_instr;
 
 fn dec16_helper(src: Reg16, value: u16) {
     let op = Op::dec16_reg { src: src };

@@ -1,7 +1,6 @@
-use hardware::Bus;
 use cpu::registers::{Flags, ZERO, SUB, HCARRY, CARRY};
-use instructions::{Instr, Reg8, Reg16, Immediate, Op, Addr};
-use super::{TestHardware, run_test, test_instr};
+use instructions::{Instr, Reg8, Reg16, Immediate, Op};
+use super::test_instr;
 
 #[test]
 fn test_bit_reg() {

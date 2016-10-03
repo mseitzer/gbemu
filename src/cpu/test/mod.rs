@@ -2,7 +2,7 @@ use cpu::Cpu;
 use cpu::debug::DebugInfo;
 use hardware::Bus;
 use int_controller::Interrupt;
-use instructions::{Instr, Op, Immediate, Reg8, Reg16, Addr, Condition};
+use instructions::{Instr, Op, Addr, Condition};
 use events::Events;
 
 mod test_misc;
@@ -34,7 +34,7 @@ impl Bus for TestHardware {
 
     fn has_irq(&self) -> bool { false }
     fn ack_irq(&mut self) -> Option<Interrupt> { None }
-    fn update(&mut self, cycles: u8) -> Events { Events::empty() }
+    fn update(&mut self, _: u8) -> Events { Events::empty() }
 }
 
 fn create_hardware(memory: Vec<u8>) -> TestHardware {
@@ -70,7 +70,7 @@ fn test_opcodes() {
     use instructions::Reg16::*;
     use instructions::Immediate::*;
 
-    let mut opcodes = vec![
+    let opcodes = vec![
         (vec![0x00], Op::nop, None),
         (vec![0x01, 0x99, 0x11], Op::ld16_imm { dest: BC }, Imm16(0x1199)),
         (vec![0x02], Op::st8_ind { dest: Addr::BC, src: A }, None),
