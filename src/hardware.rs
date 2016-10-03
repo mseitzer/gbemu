@@ -233,11 +233,9 @@ impl Hardware {
                     0x0f => self.int_controller.write_pending_reg(value),
                     0xff => self.int_controller.write_enabled_reg(value),
 
-                    _ => {}//println!("Output action {:#04x} not implemented", a)},
+                    _ => {}
                 }
             }
-            //_ => panic!("Write to non-writeable memory region detected! ({:#06x})",
-            //    addr)
         }
     }
 
